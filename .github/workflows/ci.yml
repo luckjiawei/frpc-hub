@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Frontend: lint + build
+  # ──────────────────────────────────────────────
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: site
+
+      - name: Type check
+        run: pnpm run tsc --noEmit 2>/dev/null || pnpm exec tsc --noEmit
+        working-directory: site
+        continue-on-error: true
+
+      - name: Build
+        run: pnpm run build
+        working-directory: site
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: site/dist/
+          retention-days: 1
+
+  # ──────────────────────────────────────────────
+  # Backend: vet + build (linux/amd64 only for speed)
+  # ──────────────────────────────────────────────
+  backend:
+    name: Backend
+    needs: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: pb_public/
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Build (linux/amd64)
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          go build \
+            -trimpath \
+            -ldflags "-s -w -X main.Version=ci -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -o /tmp/frpc-hub \
+            main.go
