@@ -4,8 +4,6 @@ import (
 	"embed"
 	"io/fs"
 	"log"
-	"time"
-
 	"github.com/spf13/cobra"
 
 	"frpc-hub/internal/application/dashboard"
@@ -86,10 +84,9 @@ func main() {
 		// Auto-start servers with autoConnection enabled (non-blocking)
 		go frpcService.AutoStartServers()
 
-		// Start network monitoring service
-		// Latency check: every 30 seconds (frequent for real-time monitoring)
-		// Geolocation check: every 24 hours (only for servers without geo data)
-		networkMonitorService.Start(5*time.Second, 24*time.Hour)
+		// Start network monitoring service using intervals from settings
+		latencyInterval, geoInterval := settingsService.GetMonitoringIntervals()
+		networkMonitorService.Start(latencyInterval, geoInterval)
 
 		// Register routes for each module
 		//githubHandler.RegisterHandlers(e)

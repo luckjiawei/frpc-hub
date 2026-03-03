@@ -113,6 +113,50 @@ func (s *Service) UpdateSettings(req *UpdateSettingsRequest) error {
 	return nil
 }
 
+// GetMonitoringIntervals reads latencyCheckInterval and locationCheckInterval
+// from settings general JSON. Falls back to defaults if not set or on error.
+func (s *Service) GetMonitoringIntervals() (latencyInterval, geoInterval time.Duration) {
+	const defaultLatency = 5 * time.Second
+	const defaultGeo = 24 * time.Hour
+
+	settings, err := s.GetSettings()
+	if err != nil {
+		s.app.Logger().Warn("Failed to load settings for monitoring intervals, using defaults", "error", err)
+		return defaultLatency, defaultGeo
+	}
+
+	latencyInterval = defaultLatency
+	if v, ok := settings.General["latencyCheckInterval"]; ok {
+		if secs, ok := toFloat64(v); ok && secs > 0 {
+			latencyInterval = time.Duration(secs) * time.Second
+		}
+	}
+
+	geoInterval = defaultGeo
+	if v, ok := settings.General["locationCheckInterval"]; ok {
+		if secs, ok := toFloat64(v); ok && secs > 0 {
+			geoInterval = time.Duration(secs) * time.Second
+		}
+	}
+
+	return latencyInterval, geoInterval
+}
+
+func toFloat64(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case json.Number:
+		f, err := n.Float64()
+		return f, err == nil
+	}
+	return 0, false
+}
+
 // GetAppVersion returns the application version.
 func (s *Service) GetAppVersion() string {
 	return buildinfo.AppVersion
