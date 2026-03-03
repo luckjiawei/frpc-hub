@@ -15,7 +15,9 @@
 <h3 align="center">Frpc-Hub</h3>
 
   <p align="center">
-    Self-hosted web panel for managing multiple frpc instances — no terminal required.
+    <strong>Frpc-Hub</strong> is the web UI frpc always needed.
+    <br />
+    Manage all your clients, proxies, and connections from one place. No terminal. No config editing.
     <br /><br />
     <a href="https://frpchub.jwinks.com/"><strong>📖 Documentation</strong></a>
     &nbsp;&nbsp;·&nbsp;&nbsp;
@@ -24,11 +26,23 @@
     <a href="https://github.com/luckjiawei/frpc-hub/issues">✨ Request Feature</a>
   </p>
 
+  <br />
+
+  <p align="center">
+    <strong>✅ Multi-server management</strong> &nbsp;·&nbsp;
+    <strong>📊 Real-time dashboard</strong> &nbsp;·&nbsp;
+    <strong>🌐 Network monitoring</strong> &nbsp;·&nbsp;
+    <strong>🚀 One-click auto-start</strong> &nbsp;·&nbsp;
+    <strong>⚡ High performance</strong> &nbsp;·&nbsp;
+    <strong>🐳 Docker ready</strong> &nbsp;·&nbsp;
+    <strong>🎨 Modern UI</strong> &nbsp;·&nbsp;
+  </p>
+
 </div>
 
 ## Milestones
 
-- 2026-02-28: Released v0.1.0
+- 2026-03-03: Released v0.1.0
 
 ## Star History
 
