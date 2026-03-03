@@ -33,7 +33,7 @@ func (h *SystemHandler) RegisterHandlers(e *core.ServeEvent) {
 		})
 	})
 
-	e.Router.GET("/api/system/settings", func(e *core.RequestEvent) error {
+	e.Router.GET("/api/system/settings", requireAuth(func(e *core.RequestEvent) error {
 		settings, err := h.service.GetSettings()
 		if err != nil {
 			return e.JSON(http.StatusInternalServerError, map[string]interface{}{
@@ -42,10 +42,10 @@ func (h *SystemHandler) RegisterHandlers(e *core.ServeEvent) {
 		}
 
 		return e.JSON(http.StatusOK, settings)
-	})
+	}))
 
 	// Update system settings
-	e.Router.PUT("/api/system/settings", func(e *core.RequestEvent) error {
+	e.Router.PUT("/api/system/settings", requireAuth(func(e *core.RequestEvent) error {
 		var req system.UpdateSettingsRequest
 		if err := e.BindBody(&req); err != nil {
 			return e.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -62,15 +62,15 @@ func (h *SystemHandler) RegisterHandlers(e *core.ServeEvent) {
 		return e.JSON(http.StatusOK, map[string]interface{}{
 			"message": "Settings updated successfully",
 		})
-	})
+	}))
 
-	e.Router.GET("/api/system/version", func(e *core.RequestEvent) error {
+	e.Router.GET("/api/system/version", requireAuth(func(e *core.RequestEvent) error {
 		return e.JSON(http.StatusOK, map[string]string{
 			"version": h.service.GetAppVersion(),
 		})
-	})
+	}))
 
-	e.Router.GET("/api/system/latest-version", func(e *core.RequestEvent) error {
+	e.Router.GET("/api/system/latest-version", requireAuth(func(e *core.RequestEvent) error {
 		latest, err := h.service.GetLatestVersion()
 		if err != nil {
 			return e.JSON(http.StatusInternalServerError, map[string]interface{}{
@@ -78,10 +78,23 @@ func (h *SystemHandler) RegisterHandlers(e *core.ServeEvent) {
 			})
 		}
 		return e.JSON(http.StatusOK, latest)
-	})
+	}))
 
-	// Initialize system (create admin user and settings)
+	// Initialize system (create admin user and settings).
+	// Rejected if the system is already initialized to prevent unauthorized reset.
 	e.Router.POST("/api/system/initialize", func(e *core.RequestEvent) error {
+		initialized, err := h.service.CheckInitialized()
+		if err != nil {
+			return e.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+		if initialized {
+			return e.JSON(http.StatusForbidden, map[string]interface{}{
+				"error": "system already initialized",
+			})
+		}
+
 		var req system.InitializeRequest
 		if err := e.BindBody(&req); err != nil {
 			return e.JSON(http.StatusBadRequest, map[string]interface{}{

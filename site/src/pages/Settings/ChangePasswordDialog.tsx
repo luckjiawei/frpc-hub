@@ -50,15 +50,21 @@ export function ChangePasswordDialog({
       const userEmail = pb.authStore.record.email;
       const collectionName = pb.authStore.record.collectionName || "fh_users";
 
-      console.log("Updating password for user:", pb.authStore.record.id);
-      console.log("Collection:", collectionName);
+      if (import.meta.env.DEV) {
+        console.log("Updating password for user:", pb.authStore.record.id);
+        console.log("Collection:", collectionName);
+      }
 
       // First, verify the old password by attempting to re-authenticate
       try {
         await pb.collection(collectionName).authWithPassword(userEmail, oldPassword);
-        console.log("Old password verified successfully");
+        if (import.meta.env.DEV) {
+          console.log("Old password verified successfully");
+        }
       } catch (authErr: any) {
-        console.error("Old password verification failed:", authErr);
+        if (import.meta.env.DEV) {
+          console.error("Old password verification failed:", authErr);
+        }
         setError(t("settings.incorrectPassword"));
         setLoading(false);
         return;
@@ -82,7 +88,9 @@ export function ChangePasswordDialog({
       pb.authStore.clear();
       navigate("/login", { replace: true });
     } catch (err: any) {
-      console.error("Password update error:", err);
+      if (import.meta.env.DEV) {
+        console.error("Password update error:", err);
+      }
 
       // Handle PocketBase validation errors
       if (err.response?.data) {

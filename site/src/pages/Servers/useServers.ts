@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import pb from "../../lib/pocketbase";
+import { apiPost } from "../../lib/api";
 import { toast } from "sonner";
 
 export interface Server {
@@ -268,13 +269,7 @@ export function useServers() {
 
   const launchServer = async (id: string) => {
     console.log("launching server", id);
-    const response = await fetch("/api/frpc/launch", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id }),
-    });
+    const response = await apiPost("/api/frpc/launch", { id });
     if (response.ok) {
       await fetchServers();
       toast.success("Server launched successfully");
@@ -283,13 +278,7 @@ export function useServers() {
 
   const terminateServer = async (id: string) => {
     console.log("terminating server", id);
-    const response = await fetch("/api/frpc/terminate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id }),
-    });
+    const response = await apiPost("/api/frpc/terminate", { id });
     if (response.ok) {
       await fetchServers();
       toast.success("Server launched successfully");

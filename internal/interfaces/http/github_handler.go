@@ -19,11 +19,11 @@ func NewGithubHandler(app core.App, service *github.Service) *GithubHandler {
 }
 
 func (h *GithubHandler) RegisterHandlers(e *core.ServeEvent) {
-	e.Router.GET("/api/github/frp/releases", func(e *core.RequestEvent) error {
+	e.Router.GET("/api/github/frp/releases", requireAuth(func(e *core.RequestEvent) error {
 		releases, err := h.service.GetFrpReleases()
 		if err != nil {
 			return e.JSON(500, map[string]string{"error": err.Error()})
 		}
 		return e.JSON(200, releases)
-	})
+	}))
 }

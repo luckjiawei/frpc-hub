@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiGet } from "../lib/api";
 
 interface SystemSettings {
   initialized: boolean;
@@ -47,7 +48,7 @@ export const useSystemStore = create<SystemStore>()(
       getSettings: async () => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch("/api/system/settings");
+          const response = await apiGet("/api/system/settings");
           const data = await response.json();
 
           if (!response.ok) {

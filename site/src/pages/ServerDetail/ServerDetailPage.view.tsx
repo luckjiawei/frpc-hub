@@ -54,7 +54,8 @@ export function ServerDetailPage() {
   useEffect(() => {
     if (!id) return;
 
-    const es = new EventSource(`/api/frpc/logs/stream?id=${id}`);
+    const token = pb.authStore.token;
+    const es = new EventSource(`/api/frpc/logs/stream?id=${id}&token=${token}`);
 
     es.onmessage = (event) => {
       setLogs((prev) => [...prev, event.data]);

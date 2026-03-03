@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiGet, apiPut } from "../../lib/api";
 import { Box, Flex, Heading, Text, Separator, TextField, Button } from "@radix-ui/themes";
 import { Icon } from "@iconify/react";
 import { FormItem } from "../../components/FormItem";
@@ -25,7 +26,7 @@ export function GeneralSettings() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const response = await fetch("/api/system/settings");
+        const response = await apiGet("/api/system/settings");
         if (response.ok) {
           const data = await response.json();
           if (data.general) {
@@ -48,15 +49,7 @@ export function GeneralSettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch("/api/system/settings", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          general: settings,
-        }),
-      });
+      const response = await apiPut("/api/system/settings", { general: settings });
 
       if (!response.ok) {
         throw new Error("Failed to save settings");

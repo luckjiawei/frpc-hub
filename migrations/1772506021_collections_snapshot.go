@@ -592,7 +592,7 @@ func init() {
 					"body": "<p>Hello,</p>\n<p>Click on the button below to confirm your new email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-email-change/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Confirm new email</a>\n</p>\n<p><i>If you didn't ask to change your email address, you can ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
 					"subject": "Confirm your {APP_NAME} new email address"
 				},
-				"createRule": "",
+				"createRule": "@collection.fh_settings.initialized = false",
 				"deleteRule": "id = @request.auth.id",
 				"emailChangeToken": {
 					"duration": 1800
@@ -794,8 +794,8 @@ func init() {
 				"viewRule": "id = @request.auth.id"
 			},
 			{
-				"createRule": "",
-				"deleteRule": "",
+				"createRule": "@request.auth.id != ''",
+				"deleteRule": "@request.auth.id != ''",
 				"fields": [
 					{
 						"autogeneratePattern": "[a-z0-9]{15}",
@@ -985,16 +985,16 @@ func init() {
 					"CREATE INDEX ` + "`" + `idx_Xk5mWLcPl1` + "`" + ` ON ` + "`" + `fh_proxies` + "`" + ` (` + "`" + `proxyType` + "`" + `)",
 					"CREATE INDEX ` + "`" + `idx_4azMuuySpx` + "`" + ` ON ` + "`" + `fh_proxies` + "`" + ` (` + "`" + `status` + "`" + `)"
 				],
-				"listRule": "",
+				"listRule": "@request.auth.id != ''",
 				"name": "fh_proxies",
 				"system": false,
 				"type": "base",
-				"updateRule": "",
-				"viewRule": ""
+				"updateRule": "@request.auth.id != ''",
+				"viewRule": "@request.auth.id != ''"
 			},
 			{
-				"createRule": "",
-				"deleteRule": "",
+				"createRule": "@request.auth.id != ''",
+				"deleteRule": "@request.auth.id != ''",
 				"fields": [
 					{
 						"autogeneratePattern": "[a-z0-9]{15}",
@@ -1188,12 +1188,12 @@ func init() {
 				"indexes": [
 					"CREATE INDEX ` + "`" + `idx_wNtroMytle` + "`" + ` ON ` + "`" + `fh_servers` + "`" + ` (` + "`" + `bootStatus` + "`" + `)"
 				],
-				"listRule": "",
+				"listRule": "@request.auth.id != ''",
 				"name": "fh_servers",
 				"system": false,
 				"type": "base",
-				"updateRule": "",
-				"viewRule": ""
+				"updateRule": "@request.auth.id != ''",
+				"viewRule": "@request.auth.id != ''"
 			},
 			{
 				"createRule": null,
@@ -1272,8 +1272,8 @@ func init() {
 				"viewRule": null
 			},
 			{
-				"createRule": "",
-				"deleteRule": "",
+				"createRule": "@request.auth.id != ''",
+				"deleteRule": "@request.auth.id != ''",
 				"fields": [
 					{
 						"autogeneratePattern": "[a-z0-9]{15}",
@@ -1331,12 +1331,12 @@ func init() {
 				],
 				"id": "pbc_3433790316",
 				"indexes": [],
-				"listRule": "",
+				"listRule": "@request.auth.id != ''",
 				"name": "fh_settings",
 				"system": false,
 				"type": "base",
-				"updateRule": "",
-				"viewRule": ""
+				"updateRule": "@request.auth.id != ''",
+				"viewRule": "@request.auth.id != ''"
 			}
 		]`
 

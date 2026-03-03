@@ -18,7 +18,7 @@ func NewImportHandler(app core.App, service *importer.Service) *ImportHandler {
 
 func (h *ImportHandler) RegisterHandlers(e *core.ServeEvent) {
 	// Preview: parse TOML content and return server/proxy info with duplicate flags
-	e.Router.POST("/api/import/preview", func(e *core.RequestEvent) error {
+	e.Router.POST("/api/import/preview", requireAuth(func(e *core.RequestEvent) error {
 		var req importer.ParseTomlRequest
 		if err := e.BindBody(&req); err != nil {
 			return e.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -39,10 +39,10 @@ func (h *ImportHandler) RegisterHandlers(e *core.ServeEvent) {
 		}
 
 		return e.JSON(http.StatusOK, preview)
-	})
+	}))
 
 	// Execute: import servers and proxies within a transaction
-	e.Router.POST("/api/import/execute", func(e *core.RequestEvent) error {
+	e.Router.POST("/api/import/execute", requireAuth(func(e *core.RequestEvent) error {
 		var req importer.ExecuteImportRequest
 		if err := e.BindBody(&req); err != nil {
 			return e.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -66,5 +66,5 @@ func (h *ImportHandler) RegisterHandlers(e *core.ServeEvent) {
 			"message": "import successful",
 			"result":  result,
 		})
-	})
+	}))
 }

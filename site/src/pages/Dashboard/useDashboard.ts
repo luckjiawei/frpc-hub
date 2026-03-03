@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiGet } from "../../lib/api";
 
 export interface DashboardStats {
   totalProxies: number;
@@ -78,7 +79,7 @@ export function useDashboard() {
     const loadDashboard = async () => {
       try {
         // Fetch dashboard stats from API
-        const response = await fetch(`/api/dashboard/stats`, {});
+        const response = await apiGet(`/api/dashboard/stats`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch dashboard stats");
@@ -103,7 +104,7 @@ export function useDashboard() {
 
         // Fetch topology from API
         try {
-          const topoResponse = await fetch(`/api/dashboard/topology`);
+          const topoResponse = await apiGet(`/api/dashboard/topology`);
           if (topoResponse.ok) {
             const topoData = await topoResponse.json();
             setTopology(topoData);
@@ -114,7 +115,7 @@ export function useDashboard() {
 
         // Fetch traffic history from API
         try {
-          const historyResponse = await fetch(`/api/dashboard/traffic-history?hours=24`);
+          const historyResponse = await apiGet(`/api/dashboard/traffic-history?hours=24`);
           if (historyResponse.ok) {
             const historyData = await historyResponse.json();
             setTrafficHistory(historyData);

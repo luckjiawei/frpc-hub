@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { apiPost } from "../../lib/api";
 
 export interface ImportServerInfo {
   name: string;
@@ -84,11 +85,7 @@ export function useImport() {
     setParsing(true);
     setParseError(null);
     try {
-      const res = await fetch("/api/import/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tomlContent }),
-      });
+      const res = await apiPost("/api/import/preview", { tomlContent });
       const data = await res.json();
       if (!res.ok) {
         setParseError(data.error || t("import.errorParseFailed"));
@@ -129,16 +126,12 @@ export function useImport() {
     if (!preview) return;
     setImporting(true);
     try {
-      const res = await fetch("/api/import/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tomlContent,
-          serverName,
-          importServer,
-          overwriteServer,
-          proxies: proxySelections,
-        }),
+      const res = await apiPost("/api/import/execute", {
+        tomlContent,
+        serverName,
+        importServer,
+        overwriteServer,
+        proxies: proxySelections,
       });
       const data = await res.json();
       if (!res.ok) {

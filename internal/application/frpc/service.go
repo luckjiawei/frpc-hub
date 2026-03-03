@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
+	"sync"
 	"syscall"
 	"time"
 
@@ -23,7 +26,10 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+var validServerID = regexp.MustCompile(`^[a-z0-9]{15}$`)
+
 type Service struct {
+	mu             sync.RWMutex
 	app            core.App
 	processes      map[string]*client.Service
 	statusMonitors map[string]context.CancelFunc
@@ -42,6 +48,9 @@ func NewService(app core.App, serverRepo serverdomain.Repository, proxyRepo prox
 }
 
 func (fs *Service) genCommonCfgs(id *string) (*v1.ClientCommonConfig, error) {
+	if !validServerID.MatchString(*id) {
+		return nil, errors.New("invalid server id")
+	}
 	cfg := &v1.ClientCommonConfig{}
 
 	record, err := fs.app.FindRecordById("fh_servers", *id)
@@ -52,7 +61,7 @@ func (fs *Service) genCommonCfgs(id *string) (*v1.ClientCommonConfig, error) {
 	cfg.ServerAddr = record.GetString("serverAddr")
 	cfg.ServerPort = record.GetInt("serverPort")
 
-	logDirPath, _ := filepath.Abs("pb_data/frpc/" + *id + "/")
+	logDirPath := filepath.Join("pb_data", "frpc", *id)
 	if err := os.MkdirAll(logDirPath, 0755); err != nil {
 		return nil, err
 	}
@@ -93,7 +102,7 @@ func (fs *Service) genCommonCfgs(id *string) (*v1.ClientCommonConfig, error) {
 		tlsKeyFile := filepath.Join(mainPath, "certs", "key.pem")
 		tlsTrustedCaFile := filepath.Join(mainPath, "certs", "ca.pem")
 
-		if err := os.MkdirAll(filepath.Dir(tlsCertFile), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(tlsCertFile), 0700); err != nil {
 			return nil, err
 		}
 		if err := os.WriteFile(tlsCertFile, []byte(cfg.Transport.TLS.CertFile), 0644); err != nil {
@@ -201,7 +210,7 @@ func (fs *Service) LaunchFrpc(serverId *string) error {
 		return err
 	}
 
-	fs.app.Logger().Debug("Config", "cfg", cfg, "proxyCfgs", proxyCfgs)
+	fs.app.Logger().Debug("Config", "serverAddr", cfg.ServerAddr, "serverPort", cfg.ServerPort, "proxyCount", len(proxyCfgs))
 
 	cfg.Complete()
 	log.InitLogger(cfg.Log.To, cfg.Log.Level, int(cfg.Log.MaxDays), cfg.Log.DisablePrintColor)
@@ -218,12 +227,13 @@ func (fs *Service) LaunchFrpc(serverId *string) error {
 	if shouldGracefulClose {
 		go handleTermSignal(svr)
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	fs.mu.Lock()
 	fs.processes[*serverId] = svr
+	fs.statusMonitors[*serverId] = cancel
+	fs.mu.Unlock()
 
 	fs.serverRepo.UpdateBootStatus(*serverId, serverdomain.ServerStatusRunning)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	fs.statusMonitors[*serverId] = cancel
 
 	done := make(chan error, 1)
 
@@ -289,8 +299,10 @@ func (fs *Service) monitorServiceStatus(id *string, svr *client.Service, ctx con
 func (fs *Service) destroying(id *string) {
 	fs.serverRepo.UpdateBootStatus(*id, serverdomain.ServerStatusStopped)
 	fs.proxyRepo.UpdateBootStatusByServerID(*id, proxydomain.ProxyBootStatusOffline)
+	fs.mu.Lock()
 	delete(fs.processes, *id)
 	delete(fs.statusMonitors, *id)
+	fs.mu.Unlock()
 }
 
 // monitorProxyStatus monitors proxy status from frp and updates the database.
@@ -341,7 +353,9 @@ func (fs *Service) monitorProxyStatus(serverId *string, svr *client.Service, ctx
 func (fs *Service) TerminateFrpc(id *string) error {
 	fs.app.Logger().Info("Stop frpc", "id", *id)
 
+	fs.mu.RLock()
 	cancel, exists := fs.statusMonitors[*id]
+	fs.mu.RUnlock()
 	if !exists {
 		return nil
 	}
@@ -353,13 +367,17 @@ func (fs *Service) TerminateFrpc(id *string) error {
 }
 
 func (fs *Service) getFrpMainPath(id *string) string {
-	logDirPath, _ := filepath.Abs("pb_data/frpc/" + *id + "/")
-	return logDirPath
+	return filepath.Join("pb_data", "frpc", *id)
 }
 
 // StreamLog streams the frpc log file via SSE.
 // It sends the last 50 lines as initial content, then tails new lines every 500ms.
 func (fs *Service) StreamLog(serverId string, ctx context.Context, w http.ResponseWriter, flusher http.Flusher) {
+	if !validServerID.MatchString(serverId) {
+		fmt.Fprintf(w, "data: [invalid server id]\n\n")
+		flusher.Flush()
+		return
+	}
 	mainPath := fs.getFrpMainPath(&serverId)
 	logPath := filepath.Join(mainPath, "logs", "frpc.log")
 
@@ -434,7 +452,9 @@ func (fs *Service) ReloadFrpc(serverId *string) error {
 		return err
 	}
 
+	fs.mu.RLock()
 	svr := fs.processes[*serverId]
+	fs.mu.RUnlock()
 	// TODO 2026-02-08 reload visitorCfgs
 	svr.UpdateAllConfigurer(proxyCfgs, nil)
 
@@ -443,7 +463,9 @@ func (fs *Service) ReloadFrpc(serverId *string) error {
 
 // IsServerRunning checks if a server is currently running.
 func (fs *Service) IsServerRunning(serverId string) bool {
+	fs.mu.RLock()
 	_, exists := fs.processes[serverId]
+	fs.mu.RUnlock()
 	return exists
 }
 

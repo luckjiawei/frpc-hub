@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiGet } from "../../lib/api";
 
 export interface GithubRelease {
   tag_name: string;
@@ -17,7 +18,7 @@ export function useVersion() {
     async function fetchReleases() {
       try {
         setLoading(true);
-        const response = await fetch("/api/github/frp/releases");
+        const response = await apiGet("/api/github/frp/releases");
         if (!response.ok) {
           throw new Error("Failed to fetch releases");
         }

@@ -19,9 +19,9 @@ func NewVersionHandler(app core.App, service *version.Service) *VersionHandler {
 }
 
 func (h *VersionHandler) RegisterHandlers(e *core.ServeEvent) {
-	e.Router.GET("/api/frp/version", func(e *core.RequestEvent) error {
+	e.Router.GET("/api/frp/version", requireAuth(func(e *core.RequestEvent) error {
 		return e.JSON(200, map[string]string{
 			"frp": h.service.GetFrpVersion(),
 		})
-	})
+	}))
 }
