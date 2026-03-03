@@ -98,25 +98,39 @@ func (fs *Service) genCommonCfgs(id *string) (*v1.ClientCommonConfig, error) {
 	}
 	cfg.Transport = transportConfig
 	if *cfg.Transport.TLS.Enable {
-		tlsCertFile := filepath.Join(mainPath, "certs", "cert.pem")
-		tlsKeyFile := filepath.Join(mainPath, "certs", "key.pem")
-		tlsTrustedCaFile := filepath.Join(mainPath, "certs", "ca.pem")
+		certsDir := filepath.Join(mainPath, "certs")
+		hasCert := cfg.Transport.TLS.CertFile != "" && cfg.Transport.TLS.KeyFile != ""
+		hasCa := cfg.Transport.TLS.TrustedCaFile != ""
 
-		if err := os.MkdirAll(filepath.Dir(tlsCertFile), 0700); err != nil {
-			return nil, err
+		if hasCert || hasCa {
+			if err := os.MkdirAll(certsDir, 0700); err != nil {
+				return nil, err
+			}
 		}
-		if err := os.WriteFile(tlsCertFile, []byte(cfg.Transport.TLS.CertFile), 0644); err != nil {
-			return nil, err
+		if hasCert {
+			tlsCertFile := filepath.Join(certsDir, "cert.pem")
+			tlsKeyFile := filepath.Join(certsDir, "key.pem")
+			if err := os.WriteFile(tlsCertFile, []byte(cfg.Transport.TLS.CertFile), 0644); err != nil {
+				return nil, err
+			}
+			if err := os.WriteFile(tlsKeyFile, []byte(cfg.Transport.TLS.KeyFile), 0600); err != nil {
+				return nil, err
+			}
+			cfg.Transport.TLS.CertFile = tlsCertFile
+			cfg.Transport.TLS.KeyFile = tlsKeyFile
+		} else {
+			cfg.Transport.TLS.CertFile = ""
+			cfg.Transport.TLS.KeyFile = ""
 		}
-		if err := os.WriteFile(tlsKeyFile, []byte(cfg.Transport.TLS.KeyFile), 0600); err != nil {
-			return nil, err
+		if hasCa {
+			tlsTrustedCaFile := filepath.Join(certsDir, "ca.pem")
+			if err := os.WriteFile(tlsTrustedCaFile, []byte(cfg.Transport.TLS.TrustedCaFile), 0644); err != nil {
+				return nil, err
+			}
+			cfg.Transport.TLS.TrustedCaFile = tlsTrustedCaFile
+		} else {
+			cfg.Transport.TLS.TrustedCaFile = ""
 		}
-		if err := os.WriteFile(tlsTrustedCaFile, []byte(cfg.Transport.TLS.TrustedCaFile), 0644); err != nil {
-			return nil, err
-		}
-		cfg.Transport.TLS.CertFile = tlsCertFile
-		cfg.Transport.TLS.KeyFile = tlsKeyFile
-		cfg.Transport.TLS.TrustedCaFile = tlsTrustedCaFile
 	}
 
 	// metadata config
