@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import pb from "../lib/pocketbase";
+import { apiGet } from "../lib/api";
 import { getGravatarUrl } from "../lib/gravatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "../components/PageTransition";
@@ -85,12 +86,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   const updateAvailable = appVersion && latestVersion ? isNewerVersion(latestVersion, appVersion) : false;
 
   useEffect(() => {
-    fetch("/api/system/version")
+    apiGet("/api/system/version")
       .then((res) => res.json())
       .then((data) => data.version && setAppVersion(data.version))
       .catch(() => {});
 
-    fetch("/api/system/latest-version")
+    apiGet("/api/system/latest-version")
       .then((res) => res.json())
       .then((data) => {
         if (data.tag_name) setLatestVersion(data.tag_name);
