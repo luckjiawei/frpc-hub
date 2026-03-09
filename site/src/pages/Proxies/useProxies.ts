@@ -128,7 +128,7 @@ export function useProxies() {
       setSubmitting(true);
       const body = data || formData;
 
-      await pb.collection("fh_proxies").create(body);
+      await pb.collection("fh_proxies").create({ bootStatus: "offline", ...body });
 
       await fetchProxies();
       closeDialog();

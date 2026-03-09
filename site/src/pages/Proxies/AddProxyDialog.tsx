@@ -572,13 +572,14 @@ export function AddProxyDialog({ open, onOpenChange, onSubmit, initialData }: Ad
                 !formData.type ||
                 !formData.localIp ||
                 !formData.localPort ||
-                !formData.remotePort ||
+                (!isHttpType && !formData.remotePort) ||
+                (isHttpType && !formData.subdomain && !formData.customDomains) ||
                 !!errors.serverId ||
                 !!errors.name ||
                 !!errors.type ||
                 !!errors.localIp ||
                 !!errors.localPort ||
-                !!errors.remotePort ||
+                (!isHttpType && !!errors.remotePort) ||
                 loading
               }
               onClick={handleSubmit}
