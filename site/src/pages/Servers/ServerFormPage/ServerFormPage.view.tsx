@@ -29,7 +29,6 @@ interface ServerFormPageViewProps {
   submitting: boolean;
   loadingServer: boolean;
   frpVersion: string;
-  isSubmitDisabled: boolean;
   mounted: boolean;
   onChange: (field: keyof Omit<ServerFormData, "auth" | "log" | "transport" | "metadatas">, value: string | number | boolean) => void;
   onAuthChange: (field: keyof ServerFormData["auth"], value: string) => void;
@@ -50,7 +49,6 @@ export function ServerFormPageView({
   submitting,
   loadingServer,
   frpVersion,
-  isSubmitDisabled,
   mounted,
   onChange,
   onAuthChange,
@@ -505,7 +503,7 @@ export function ServerFormPageView({
                 </Button>
                 <Button
                   size="2"
-                  disabled={isSubmitDisabled}
+                  disabled={submitting}
                   onClick={onSubmit}
                   className="[background:linear-gradient(135deg,var(--accent-9)_0%,var(--accent-10)_100%)] text-white"
                 >

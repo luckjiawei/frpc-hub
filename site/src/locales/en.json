@@ -296,6 +296,7 @@
     "sectionPlugin": "Plugin",
     "pluginEnable": "Enable Plugin",
     "pluginEnableDesc": "Use a frp plugin to extend proxy functionality",
+    "pluginTcpOnly": "TCP only",
     "pluginType": "Plugin Type",
     "pluginSupported": "Supported",
     "pluginUsername": "Username",
@@ -315,7 +316,9 @@
     "disabled": "Disabled",
     "errorInvalidName": "Invalid name (use alphanumeric, - or _)",
     "errorInvalidIP": "Invalid IP or hostname",
-    "errorInvalidPort": "Invalid port (1-65535)"
+    "errorInvalidPort": "Invalid port (1-65535)",
+    "errorRequired": "Required",
+    "errorSubdomainRequired": "Subdomain or custom domains required"
   },
   "settings": {
     "title": "Settings",

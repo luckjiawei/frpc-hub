@@ -19,7 +19,6 @@ export function ServerFormPage() {
       submitting={form.submitting}
       loadingServer={form.loadingServer}
       frpVersion={form.frpVersion}
-      isSubmitDisabled={form.isSubmitDisabled}
       mounted={mounted}
       onChange={form.handleChange}
       onAuthChange={form.handleAuthChange}

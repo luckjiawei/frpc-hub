@@ -130,17 +130,18 @@ export function useServerForm() {
     value: string | number | boolean
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error on change, re-validate format
+    if (field === "serverName") {
+      const error = value && !REGEX.SERVER_NAME.test(value as string) ? "Invalid server name" : "";
+      setErrors((prev) => ({ ...prev, serverName: error }));
+    }
     if (field === "serverAddr") {
       const error = value && !REGEX.IP_OR_HOSTNAME.test(value as string) ? "Invalid IP or hostname" : "";
       setErrors((prev) => ({ ...prev, serverAddr: error }));
     }
     if (field === "serverPort") {
-      const error = !value || !REGEX.PORT.test((value as number).toString()) ? "Invalid port" : "";
+      const error = value && !REGEX.PORT.test((value as number).toString()) ? "Invalid port" : "";
       setErrors((prev) => ({ ...prev, serverPort: error }));
-    }
-    if (field === "serverName") {
-      const error = value && !REGEX.SERVER_NAME.test(value as string) ? "Invalid server name" : "";
-      setErrors((prev) => ({ ...prev, serverName: error }));
     }
   };
 
@@ -182,15 +183,20 @@ export function useServerForm() {
     e.target.value = "";
   };
 
-  const handleSubmit = async () => {
-    // Basic validation
+  const validate = (data: ServerFormData): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.serverName) newErrors.serverName = "Required";
-    else if (!REGEX.SERVER_NAME.test(formData.serverName)) newErrors.serverName = "Invalid server name";
-    if (!formData.serverAddr) newErrors.serverAddr = "Required";
-    else if (!REGEX.IP_OR_HOSTNAME.test(formData.serverAddr)) newErrors.serverAddr = "Invalid IP or hostname";
-    if (!formData.serverPort || !REGEX.PORT.test(formData.serverPort.toString())) newErrors.serverPort = "Invalid port";
-    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
+    if (!data.serverName) newErrors.serverName = "Required";
+    else if (!REGEX.SERVER_NAME.test(data.serverName)) newErrors.serverName = "Invalid server name";
+    if (!data.serverAddr) newErrors.serverAddr = "Required";
+    else if (!REGEX.IP_OR_HOSTNAME.test(data.serverAddr)) newErrors.serverAddr = "Invalid IP or hostname";
+    if (!data.serverPort) newErrors.serverPort = "Required";
+    else if (!REGEX.PORT.test(data.serverPort.toString())) newErrors.serverPort = "Invalid port";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate(formData)) return;
 
     try {
       setSubmitting(true);
@@ -210,15 +216,6 @@ export function useServerForm() {
     }
   };
 
-  const isSubmitDisabled =
-    !formData.serverName ||
-    !formData.serverAddr ||
-    !formData.serverPort ||
-    !!errors.serverName ||
-    !!errors.serverAddr ||
-    !!errors.serverPort ||
-    submitting;
-
   return {
     isEditing,
     formData,
@@ -226,7 +223,6 @@ export function useServerForm() {
     submitting,
     loadingServer,
     frpVersion,
-    isSubmitDisabled,
     handleChange,
     handleAuthChange,
     handleLogChange,

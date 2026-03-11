@@ -21,7 +21,7 @@ export function ProxyFormPage() {
       submitting={form.submitting}
       errors={form.errors}
       isHttpType={form.isHttpType}
-      isSubmitDisabled={form.isSubmitDisabled}
+      isSocks5Plugin={form.isSocks5Plugin}
       mounted={mounted}
       onChange={form.handleChange}
       onSubmit={form.handleSubmit}

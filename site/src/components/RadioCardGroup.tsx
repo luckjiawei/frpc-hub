@@ -7,6 +7,8 @@ export interface RadioCardOption {
   label: string;
   icon?: string;
   comingSoon?: boolean;
+  incompatible?: boolean;
+  incompatibleLabel?: string;
 }
 
 interface RadioCardGroupProps {
@@ -21,7 +23,7 @@ export function RadioCardGroup({ options, value, onChange, comingSoonLabel = "Co
     <Flex gap="2" wrap="wrap">
       {options.map((opt) => {
         const isActive = value === opt.value;
-        const disabled = !!opt.comingSoon;
+        const disabled = !!opt.comingSoon || !!opt.incompatible;
         return (
           <button
             key={opt.value}
@@ -63,17 +65,21 @@ export function RadioCardGroup({ options, value, onChange, comingSoonLabel = "Co
 
               {/* Label — bold ghost reserves width to prevent jitter */}
               <span className="relative">
-                {/* invisible bold copy to pre-reserve width */}
                 <span aria-hidden className="invisible block h-0 font-bold">{opt.label}</span>
                 <span className={`block ${isActive ? "font-bold text-[var(--accent-11)]" : "font-normal text-[var(--gray-11)]"}`}>
                   {opt.label}
                 </span>
               </span>
 
-              {/* Coming soon badge */}
+              {/* Badges */}
               {opt.comingSoon && (
                 <span className="rounded bg-[var(--gray-4)] px-1 py-0.5 text-[10px] text-[var(--gray-9)]">
                   {comingSoonLabel}
+                </span>
+              )}
+              {opt.incompatible && opt.incompatibleLabel && (
+                <span className="rounded bg-[var(--amber-3)] px-1 py-0.5 text-[10px] text-[var(--amber-11)]">
+                  {opt.incompatibleLabel}
                 </span>
               )}
             </Flex>

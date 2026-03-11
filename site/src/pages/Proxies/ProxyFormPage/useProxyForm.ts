@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import pb from "../../../lib/pocketbase";
 import { toast } from "sonner";
 import { REGEX } from "../../../lib/regex";
@@ -54,6 +55,7 @@ export function useProxyForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState<ProxyFormData>(DEFAULT_FORM);
   const [servers, setServers] = useState<ServerOption[]>([]);
@@ -129,14 +131,14 @@ export function useProxyForm() {
     if (value) {
       switch (field) {
         case "name":
-          if (!REGEX.PROXY_NAME.test(value)) error = "Invalid proxy name";
+          if (!REGEX.PROXY_NAME.test(value)) error = t("proxy.errorInvalidName");
           break;
         case "localIp":
-          if (!REGEX.IP_OR_HOSTNAME.test(value)) error = "Invalid IP or hostname";
+          if (!REGEX.IP_OR_HOSTNAME.test(value)) error = t("proxy.errorInvalidIP");
           break;
         case "localPort":
         case "remotePort":
-          if (!REGEX.PORT.test(value)) error = "Invalid port number";
+          if (!REGEX.PORT.test(value)) error = t("proxy.errorInvalidPort");
           break;
       }
     }
@@ -144,17 +146,55 @@ export function useProxyForm() {
   };
 
   const handleChange = (field: keyof ProxyFormData, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "type" && value !== "tcp" && prev.pluginEnabled && prev.pluginType === "socks5") {
+        next.pluginEnabled = false;
+      }
+      return next;
+    });
     if (typeof value === "string") validateField(field, value);
   };
 
+  const validate = (data: ProxyFormData): boolean => {
+    const isHttp = data.type === "http" || data.type === "https";
+    const isSocks5 = data.pluginEnabled && data.pluginType === "socks5";
+    const newErrors: Partial<Record<keyof ProxyFormData, string>> = {};
+
+    if (!data.serverId) newErrors.serverId = t("proxy.errorRequired");
+    if (!data.name) newErrors.name = t("proxy.errorRequired");
+    else if (!REGEX.PROXY_NAME.test(data.name)) newErrors.name = t("proxy.errorInvalidName");
+
+    if (!isSocks5) {
+      if (!data.localIp) newErrors.localIp = t("proxy.errorRequired");
+      else if (!REGEX.IP_OR_HOSTNAME.test(data.localIp)) newErrors.localIp = t("proxy.errorInvalidIP");
+
+      if (!data.localPort) newErrors.localPort = t("proxy.errorRequired");
+      else if (!REGEX.PORT.test(data.localPort)) newErrors.localPort = t("proxy.errorInvalidPort");
+    }
+
+    if (!isHttp && !isSocks5) {
+      if (!data.remotePort) newErrors.remotePort = t("proxy.errorRequired");
+      else if (!REGEX.PORT.test(data.remotePort)) newErrors.remotePort = t("proxy.errorInvalidPort");
+    }
+
+    if (isHttp && !data.subdomain && !data.customDomains) {
+      newErrors.subdomain = t("proxy.errorSubdomainRequired");
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
+    if (!validate(formData)) return;
+
     const plugin = formData.pluginEnabled
       ? {
-          type: formData.pluginType,
-          ...(formData.pluginUsername ? { username: formData.pluginUsername } : {}),
-          ...(formData.pluginPassword ? { password: formData.pluginPassword } : {}),
-        }
+        type: formData.pluginType,
+        ...(formData.pluginUsername ? { username: formData.pluginUsername } : {}),
+        ...(formData.pluginPassword ? { password: formData.pluginPassword } : {}),
+      }
       : null;
 
     const payload = {
@@ -195,20 +235,7 @@ export function useProxyForm() {
   };
 
   const isHttpType = formData.type === "http" || formData.type === "https";
-
-  const isSubmitDisabled =
-    !formData.serverId ||
-    !formData.name ||
-    !formData.type ||
-    !formData.localIp ||
-    !formData.localPort ||
-    (!isHttpType && !formData.remotePort) ||
-    (isHttpType && !formData.subdomain && !formData.customDomains) ||
-    !!errors.name ||
-    !!errors.localIp ||
-    !!errors.localPort ||
-    (!isHttpType && !!errors.remotePort) ||
-    submitting;
+  const isSocks5Plugin = formData.pluginEnabled && formData.pluginType === "socks5";
 
   return {
     isEditing,
@@ -219,7 +246,7 @@ export function useProxyForm() {
     submitting,
     errors,
     isHttpType,
-    isSubmitDisabled,
+    isSocks5Plugin,
     handleChange,
     handleSubmit,
     navigate,

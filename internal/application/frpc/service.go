@@ -169,6 +169,13 @@ func (fs *Service) genProxyCfgs(serverId *string) ([]v1.ProxyConfigurer, error) 
 		}
 		proxyData["name"] = proxyMap.Name + "-" + proxyMap.Id
 
+		// Remove empty plugin map so frp doesn't try to parse a typeless plugin
+		if plugin, ok := proxyData["plugin"].(map[string]interface{}); ok {
+			if _, hasType := plugin["type"]; !hasType {
+				delete(proxyData, "plugin")
+			}
+		}
+
 		jsonData, err = json.Marshal(proxyData)
 		if err != nil {
 			return nil, err

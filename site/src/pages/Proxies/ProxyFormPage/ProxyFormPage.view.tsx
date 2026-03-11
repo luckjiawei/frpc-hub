@@ -34,16 +34,16 @@ const proxyTypes = [
   { value: "xtcp",   label: "XTCP",   icon: "lucide:share-2",          comingSoon: true  },
 ];
 
-const pluginTypes = [
-  { value: "socks5", label: "SOCKS5", icon: "lucide:globe", comingSoon: false },
-  { value: "http_proxy", label: "HTTPProxy", icon: "lucide:waypoints", comingSoon: true },
-  { value: "static_file", label: "StaticFile", icon: "lucide:folder-open", comingSoon: true },
-  { value: "unix_domain_socket", label: "UnixDomainSocket", icon: "lucide:cable", comingSoon: true },
-  { value: "http2https", label: "HTTP2HTTPS", icon: "lucide:lock", comingSoon: true },
-  { value: "https2http", label: "HTTPS2HTTP", icon: "lucide:lock-open", comingSoon: true },
-  { value: "https2https", label: "HTTPS2HTTPS", icon: "lucide:shield-check", comingSoon: true },
-  { value: "tls2raw", label: "TLS2Raw", icon: "lucide:zap", comingSoon: true },
-  { value: "virtual_net", label: "VirtualNet", icon: "lucide:network", comingSoon: true },
+const BASE_PLUGIN_TYPES = [
+  { value: "socks5",             label: "SOCKS5",           icon: "lucide:globe",         comingSoon: false, tcpOnly: true  },
+  { value: "http_proxy",         label: "HTTPProxy",         icon: "lucide:waypoints",     comingSoon: true,  tcpOnly: false },
+  { value: "static_file",        label: "StaticFile",        icon: "lucide:folder-open",   comingSoon: true,  tcpOnly: false },
+  { value: "unix_domain_socket", label: "UnixDomainSocket",  icon: "lucide:cable",         comingSoon: true,  tcpOnly: false },
+  { value: "http2https",         label: "HTTP2HTTPS",        icon: "lucide:lock",          comingSoon: true,  tcpOnly: false },
+  { value: "https2http",         label: "HTTPS2HTTP",        icon: "lucide:lock-open",     comingSoon: true,  tcpOnly: false },
+  { value: "https2https",        label: "HTTPS2HTTPS",       icon: "lucide:shield-check",  comingSoon: true,  tcpOnly: false },
+  { value: "tls2raw",            label: "TLS2Raw",           icon: "lucide:zap",           comingSoon: true,  tcpOnly: false },
+  { value: "virtual_net",        label: "VirtualNet",        icon: "lucide:network",       comingSoon: true,  tcpOnly: false },
 ];
 
 
@@ -56,7 +56,7 @@ interface ProxyFormPageViewProps {
   submitting: boolean;
   errors: Partial<Record<keyof ProxyFormData, string>>;
   isHttpType: boolean;
-  isSubmitDisabled: boolean;
+  isSocks5Plugin: boolean;
   mounted: boolean;
   onChange: (field: keyof ProxyFormData, value: string | boolean) => void;
   onSubmit: () => void;
@@ -73,7 +73,7 @@ export function ProxyFormPageView({
   submitting,
   errors,
   isHttpType,
-  isSubmitDisabled,
+  isSocks5Plugin,
   mounted,
   onChange,
   onSubmit,
@@ -198,31 +198,44 @@ export function ProxyFormPageView({
               <section>
                 <SectionHeading id="section-network" title={t("proxy.sectionNetwork")} icon="lucide:network" />
                 <Flex direction="column" gap="4">
-                  <Flex gap="3">
-                    <Box className="flex-[2]">
-                      <FormItem label={t("proxy.localAddress")} required error={errors.localIp}>
-                        <TextField.Root
-                          size="2"
-                          placeholder={t("proxy.localAddressPlaceholder")}
-                          value={formData.localIp}
-                          onChange={(e) => onChange("localIp", e.target.value)}
-                          color={errors.localIp ? "red" : undefined}
-                        />
-                      </FormItem>
-                    </Box>
-                    <Box className="flex-1">
-                      <FormItem label={t("proxy.localPort")} required error={errors.localPort}>
-                        <TextField.Root
-                          size="2"
-                          placeholder={t("proxy.localPortPlaceholder")}
-                          type="number"
-                          value={formData.localPort}
-                          onChange={(e) => onChange("localPort", e.target.value)}
-                          color={errors.localPort ? "red" : undefined}
-                        />
-                      </FormItem>
-                    </Box>
-                  </Flex>
+                  <AnimatePresence>
+                    {!isSocks5Plugin && (
+                      <motion.div
+                        key="local-addr"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <Flex gap="3">
+                          <Box className="flex-[2]">
+                            <FormItem label={t("proxy.localAddress")} required error={errors.localIp}>
+                              <TextField.Root
+                                size="2"
+                                placeholder={t("proxy.localAddressPlaceholder")}
+                                value={formData.localIp}
+                                onChange={(e) => onChange("localIp", e.target.value)}
+                                color={errors.localIp ? "red" : undefined}
+                              />
+                            </FormItem>
+                          </Box>
+                          <Box className="flex-1">
+                            <FormItem label={t("proxy.localPort")} required error={errors.localPort}>
+                              <TextField.Root
+                                size="2"
+                                placeholder={t("proxy.localPortPlaceholder")}
+                                type="number"
+                                value={formData.localPort}
+                                onChange={(e) => onChange("localPort", e.target.value)}
+                                color={errors.localPort ? "red" : undefined}
+                              />
+                            </FormItem>
+                          </Box>
+                        </Flex>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {isHttpType ? (
                     <>
@@ -334,7 +347,11 @@ export function ProxyFormPageView({
                     >
                       <FormItem label={t("proxy.pluginType")} required>
                         <RadioCardGroup
-                          options={pluginTypes}
+                          options={BASE_PLUGIN_TYPES.map((pt) => ({
+                            ...pt,
+                            incompatible: pt.tcpOnly && formData.type !== "tcp",
+                            incompatibleLabel: t("proxy.pluginTcpOnly"),
+                          }))}
                           value={formData.pluginType}
                           onChange={(v) => onChange("pluginType", v as ProxyFormData["pluginType"])}
                           comingSoonLabel={t("common.comingSoon")}
@@ -392,7 +409,7 @@ export function ProxyFormPageView({
                 </Button>
                 <Button
                   size="2"
-                  disabled={isSubmitDisabled}
+                  disabled={submitting}
                   onClick={onSubmit}
                   className="[background:linear-gradient(135deg,var(--accent-9)_0%,var(--accent-10)_100%)] text-white"
                 >

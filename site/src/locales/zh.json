@@ -296,6 +296,7 @@
     "sectionPlugin": "插件",
     "pluginEnable": "启用插件",
     "pluginEnableDesc": "使用 frp 插件扩展代理功能",
+    "pluginTcpOnly": "仅限 TCP",
     "pluginType": "插件类型",
     "pluginSupported": "已支持",
     "pluginUsername": "用户名",
@@ -315,7 +316,9 @@
     "disabled": "已禁用",
     "errorInvalidName": "无效的名称（使用字母数字、- 或 _）",
     "errorInvalidIP": "无效的 IP 或主机名",
-    "errorInvalidPort": "无效的端口（1-65535）"
+    "errorInvalidPort": "无效的端口（1-65535）",
+    "errorRequired": "必填",
+    "errorSubdomainRequired": "子域名或自定义域名为必填项"
   },
   "settings": {
     "title": "设置",

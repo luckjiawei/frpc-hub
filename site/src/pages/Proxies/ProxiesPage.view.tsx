@@ -171,7 +171,7 @@ export function ProxiesView({
                     {proxies.map((proxy) => (
                       <Table.Row key={proxy.id}>
                         <Table.Cell>
-                          <Text weight="medium">{proxy.name}</Text>
+                          <Text weight="medium">{proxy.name || <Text color="gray">-</Text>}</Text>
                         </Table.Cell>
                         <Table.Cell>
                           <Badge variant="surface">{proxy.proxyType.toUpperCase()}</Badge>
@@ -191,11 +191,52 @@ export function ProxiesView({
                           )}
                         </Table.Cell>
                         <Table.Cell>
-                          <Text size="2" color="gray">
-                            {proxy.localIP || "127.0.0.1"}
-                          </Text>
+                          {(() => {
+                            const ip = proxy.localIP || "127.0.0.1";
+                            const copyKey = `${proxy.id}-localIP`;
+                            const isCopied = copiedId === copyKey;
+                            return (
+                              <Flex
+                                align="center"
+                                gap="1"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => handleCopy(ip, copyKey)}
+                                title={isCopied ? t("common.copied") : t("common.clickToCopy")}
+                              >
+                                <Text size="2" color="gray">{ip}</Text>
+                                <Icon
+                                  icon={isCopied ? "lucide:check" : "lucide:copy"}
+                                  width="12"
+                                  height="12"
+                                  color={isCopied ? "var(--green-9)" : "var(--gray-8)"}
+                                />
+                              </Flex>
+                            );
+                          })()}
                         </Table.Cell>
-                        <Table.Cell>{proxy.localPort}</Table.Cell>
+                        <Table.Cell>
+                          {proxy.localPort ? (() => {
+                            const copyKey = `${proxy.id}-localPort`;
+                            const isCopied = copiedId === copyKey;
+                            return (
+                              <Flex
+                                align="center"
+                                gap="1"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => handleCopy(String(proxy.localPort), copyKey)}
+                                title={isCopied ? t("common.copied") : t("common.clickToCopy")}
+                              >
+                                <Text size="2">{proxy.localPort}</Text>
+                                <Icon
+                                  icon={isCopied ? "lucide:check" : "lucide:copy"}
+                                  width="12"
+                                  height="12"
+                                  color={isCopied ? "var(--green-9)" : "var(--gray-8)"}
+                                />
+                              </Flex>
+                            );
+                          })() : <Text size="2" color="gray">-</Text>}
+                        </Table.Cell>
                         <Table.Cell>
                           {(() => {
                             if (proxy.proxyType === "http" || proxy.proxyType === "https") {
