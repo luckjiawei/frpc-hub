@@ -1,38 +1,71 @@
 @import "tailwindcss";
 
-/* Status Indicator Dot Animation */
-@keyframes status-blink {
-  0%,
-  100% {
+/* Status Indicator Dot — Green pulse (online) */
+@keyframes status-pulse-green {
+  0% {
+    box-shadow: 0 0 0 0 var(--green-a7), 0 0 6px var(--green-a8);
     opacity: 1;
     transform: scale(1);
   }
+  60% {
+    box-shadow: 0 0 0 6px transparent, 0 0 10px var(--green-a6);
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent, 0 0 6px var(--green-a8);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Status Indicator Dot — Red blink (offline) */
+@keyframes status-blink-red {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px var(--red-a8);
+  }
+  50% {
+    opacity: 0.25;
+    box-shadow: 0 0 2px var(--red-a5);
+  }
+}
+
+/* Status Indicator Dot — Gray (unknown) */
+@keyframes status-blink-gray {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
   50% {
     opacity: 0.3;
-    transform: scale(0.85);
   }
 }
 
 .status-dot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   margin-right: 6px;
-  animation: status-blink 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 .status-dot-green {
   background-color: var(--green-9);
-  box-shadow: 0 0 8px var(--green-a7);
+  box-shadow: 0 0 6px var(--green-a8);
+  animation: status-pulse-green 2s ease-in-out infinite;
 }
 
 .status-dot-red {
   background-color: var(--red-9);
-  box-shadow: 0 0 8px var(--red-a7);
+  box-shadow: 0 0 6px var(--red-a8);
+  animation: status-blink-red 1.6s ease-in-out infinite;
 }
 
 .status-dot-gray {
   background-color: var(--gray-9);
-  box-shadow: 0 0 8px var(--gray-a7);
+  box-shadow: 0 0 4px var(--gray-a7);
+  animation: status-blink-gray 2.5s ease-in-out infinite;
 }
