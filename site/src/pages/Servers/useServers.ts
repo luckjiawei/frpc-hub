@@ -60,67 +60,15 @@ export interface Server {
   metadatas?: Record<string, string>;
 }
 
-export interface CreateServerForm {
-  serverName: string;
-  serverAddr: string;
-  serverPort: number;
-  description: string;
-  autoConnection: boolean;
-  auth: {
-    method: "none" | "token" | "oidc";
-    token: string;
-    oidcClientId: string;
-    oidcClientSecret: string;
-    oidcAudience: string;
-    oidcTokenEndpoint: string;
-  };
-  log?: {
-    level: "trace" | "debug" | "info" | "warn" | "error";
-    maxDays: number;
-    to?: string;
-  };
-  transport?: {
-    protocol: "tcp" | "kcp" | "quic" | "websocket" | "wss";
-    tls: {
-      enable: boolean;
-      disableCustomTLSFirstByte: boolean;
-      certFile: string;
-      keyFile: string;
-      trustedCaFile: string;
-      serverName: string;
-    };
-    proxyURL: string;
-  };
-  metadatas?: Record<string, string>;
-}
-
 export function useServers() {
   const [servers, setServers] = useState<Server[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<CreateServerForm>({
-    serverName: "",
-    serverAddr: "",
-    serverPort: 7000,
-    description: "",
-    autoConnection: false,
-    auth: {
-      method: "token",
-      token: "",
-      oidcClientId: "",
-      oidcClientSecret: "",
-      oidcAudience: "",
-      oidcTokenEndpoint: "",
-    },
-  });
-  const [submitting, setSubmitting] = useState(false);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const PER_PAGE = 10;
 
-  const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [search, setSearch] = useState("");
 
   const fetchServers = useCallback(
@@ -176,87 +124,6 @@ export function useServers() {
     return () => clearInterval(interval);
   }, [fetchServers]);
 
-  const openDialog = (server?: Server) => {
-    if (server) {
-      setEditingServer(server);
-      // Pre-fill form data if we were using the hook's state, but we're seemingly not.
-      // But we might need to if we want the hook's formData to match.
-      // However, the View doesn't seem to use hook's formData for the dialog anymore.
-      // We will let the Dialog handle its own state based on editingServer prop.
-    } else {
-      setEditingServer(null);
-      setFormData({
-        serverName: "",
-        serverAddr: "",
-        serverPort: 7000,
-        description: "",
-        autoConnection: false,
-        auth: {
-          method: "token",
-          token: "",
-          oidcClientId: "",
-          oidcClientSecret: "",
-          oidcAudience: "",
-          oidcTokenEndpoint: "",
-        },
-      });
-    }
-    setIsDialogOpen(true);
-  };
-
-  const closeDialog = () => {
-    setIsDialogOpen(false);
-    setEditingServer(null);
-  };
-
-  const updateFormField = (field: keyof CreateServerForm, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const createServer = async (data?: CreateServerForm) => {
-    try {
-      setSubmitting(true);
-      const body = data || formData;
-      // Ensure port is a number
-      const payload = {
-        ...body,
-        serverPort: Number(body.serverPort),
-        bootStatus: "stopped", // Default status
-      };
-
-      await pb.collection("fh_servers").create(payload);
-
-      await fetchServers();
-      closeDialog();
-      toast.success("Server created successfully");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create server");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const updateServer = async (id: string, data: CreateServerForm) => {
-    try {
-      setSubmitting(true);
-      // Ensure port is a number
-      const payload = {
-        ...data,
-        serverPort: Number(data.serverPort),
-      };
-
-      await pb.collection("fh_servers").update(id, payload);
-
-      await fetchServers();
-      closeDialog();
-      toast.success("Server updated successfully");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update server");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const deleteServer = async (id: string) => {
     try {
       await pb.collection("fh_servers").delete(id);
@@ -289,15 +156,6 @@ export function useServers() {
     servers,
     loading,
     refreshing,
-    isDialogOpen,
-    formData,
-    submitting,
-    editingServer,
-    openDialog,
-    closeDialog,
-    updateFormField,
-    createServer,
-    updateServer,
     deleteServer,
     page,
     setPage,

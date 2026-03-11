@@ -7,7 +7,7 @@ import { REGEX } from "../../../lib/regex";
 export interface ProxyFormData {
   serverId: string;
   name: string;
-  type: "tcp" | "udp" | "http" | "https" | "stcp" | "xtcp";
+  type: "tcp" | "udp" | "http" | "https" | "tcpmux" | "stcp" | "sudp" | "xtcp";
   localIp: string;
   localPort: string;
   remotePort: string;
@@ -16,6 +16,10 @@ export interface ProxyFormData {
   encryption: boolean;
   compression: boolean;
   description: string;
+  pluginEnabled: boolean;
+  pluginType: "socks5";
+  pluginUsername: string;
+  pluginPassword: string;
 }
 
 const DEFAULT_FORM: ProxyFormData = {
@@ -30,7 +34,21 @@ const DEFAULT_FORM: ProxyFormData = {
   encryption: false,
   compression: false,
   description: "",
+  pluginEnabled: false,
+  pluginType: "socks5",
+  pluginUsername: "",
+  pluginPassword: "",
 };
+
+export interface ServerOption {
+  id: string;
+  serverName: string;
+  bootStatus: string;
+  networkStatus?: {
+    latency: number;
+    reachable: boolean;
+  };
+}
 
 export function useProxyForm() {
   const navigate = useNavigate();
@@ -38,7 +56,7 @@ export function useProxyForm() {
   const isEditing = !!id;
 
   const [formData, setFormData] = useState<ProxyFormData>(DEFAULT_FORM);
-  const [servers, setServers] = useState<{ id: string; serverName: string }[]>([]);
+  const [servers, setServers] = useState<ServerOption[]>([]);
   const [loadingServers, setLoadingServers] = useState(false);
   const [loadingProxy, setLoadingProxy] = useState(isEditing);
   const [submitting, setSubmitting] = useState(false);
@@ -50,9 +68,14 @@ export function useProxyForm() {
         setLoadingServers(true);
         const records = await pb.collection("fh_servers").getFullList({
           sort: "-created",
-          fields: "id,serverName",
+          fields: "id,serverName,bootStatus,networkStatus",
         });
-        const list = records.map((r) => ({ id: r.id, serverName: r.serverName as string }));
+        const list = records.map((r) => ({
+          id: r.id,
+          serverName: r.serverName as string,
+          bootStatus: (r.bootStatus as string) || "stopped",
+          networkStatus: r.networkStatus as ServerOption["networkStatus"],
+        }));
         setServers(list);
         if (list.length > 0 && !isEditing) {
           setFormData((prev) => ({ ...prev, serverId: list[0].id }));
@@ -73,6 +96,7 @@ export function useProxyForm() {
       try {
         setLoadingProxy(true);
         const record = await pb.collection("fh_proxies").getOne(id);
+        const plugin = record.plugin as Record<string, string> | null | undefined;
         setFormData({
           serverId: record.serverId as string,
           name: (record.name as string) || "",
@@ -85,6 +109,10 @@ export function useProxyForm() {
           encryption: (record.transport as Record<string, boolean> | undefined)?.use_encryption || false,
           compression: (record.transport as Record<string, boolean> | undefined)?.use_compression || false,
           description: (record.description as string) || "",
+          pluginEnabled: !!plugin?.type,
+          pluginType: (plugin?.type as ProxyFormData["pluginType"]) || "socks5",
+          pluginUsername: plugin?.username || "",
+          pluginPassword: plugin?.password || "",
         });
       } catch {
         toast.error("Failed to load proxy");
@@ -121,6 +149,14 @@ export function useProxyForm() {
   };
 
   const handleSubmit = async () => {
+    const plugin = formData.pluginEnabled
+      ? {
+          type: formData.pluginType,
+          ...(formData.pluginUsername ? { username: formData.pluginUsername } : {}),
+          ...(formData.pluginPassword ? { password: formData.pluginPassword } : {}),
+        }
+      : null;
+
     const payload = {
       serverId: formData.serverId,
       proxyType: formData.type,
@@ -136,6 +172,7 @@ export function useProxyForm() {
         use_encryption: formData.encryption,
         use_compression: formData.compression,
       },
+      plugin,
       description: formData.description,
       status: "enabled",
     };

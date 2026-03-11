@@ -15,9 +15,7 @@ import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimateNumber } from "../../components/AnimateNumber";
 import { EmptyState } from "../../components/EmptyState";
-import { AddServerDialog } from "./AddServerDialog";
-import type { ServerFormData } from "./AddServerDialog";
-import type { Server, CreateServerForm } from "./useServers";
+import type { Server } from "./useServers";
 import { PageHeader } from "../../components/PageHeader";
 import { Loading } from "../../components/Loading";
 import { StatCard } from "../../components/StatCard";
@@ -29,15 +27,6 @@ interface ServersViewProps {
   servers: Server[];
   loading?: boolean;
   refreshing: boolean;
-  isDialogOpen: boolean;
-  formData: CreateServerForm;
-  submitting: boolean;
-  editingServer: Server | null;
-  openDialog: (server?: Server) => void;
-  closeDialog: () => void;
-  updateFormField: (field: keyof CreateServerForm, value: string | number) => void;
-  createServer: (data?: CreateServerForm) => Promise<void>;
-  updateServer: (id: string, data: CreateServerForm) => Promise<void>;
   deleteServer: (id: string) => void;
   launchServer: (id: string) => void;
   terminateServer: (id: string) => void;
@@ -50,15 +39,6 @@ export function ServersView({
   servers,
   loading,
   refreshing,
-  isDialogOpen,
-  // formData,
-  // submitting,
-  editingServer,
-  openDialog,
-  closeDialog,
-  // updateFormField,
-  createServer,
-  updateServer,
   deleteServer,
   launchServer,
   terminateServer,
@@ -88,23 +68,8 @@ export function ServersView({
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSave = async (data: ServerFormData) => {
-    if (editingServer) {
-      await updateServer(editingServer.id, data);
-    } else {
-      await createServer(data);
-    }
-  };
-
   return (
     <>
-      <AddServerDialog
-        open={isDialogOpen}
-        onOpenChange={(open) => !open && closeDialog()}
-        onSubmit={handleSave}
-        initialData={editingServer as any}
-      />
-
       <Flex direction="column" gap="5" className="flex flex-1 flex-col">
         {/* Header */}
         <PageHeader
@@ -212,7 +177,7 @@ export function ServersView({
                     <Icon icon="lucide:file-input" width="16" height="16" />
                     {t("import.title")}
                   </Button>
-                  <Button onClick={() => openDialog()}>
+                  <Button onClick={() => navigate("/servers/new")}>
                     <Icon icon="lucide:plus" width="14" height="14" />
                     {t("server.addServer")}
                   </Button>
@@ -281,7 +246,7 @@ export function ServersView({
                         title={t("server.noServers")}
                         description={t("server.addFirstServer")}
                         actionText={t("server.addYourFirstServer")}
-                        onAction={() => openDialog()}
+                        onAction={() => navigate("/servers/new")}
                       />
                     </Flex>
                   </motion.div>
@@ -411,7 +376,7 @@ export function ServersView({
                                 size="1"
                                 variant="soft"
                                 className="cursor-pointer"
-                                onClick={() => openDialog(server)}
+                                onClick={() => navigate(`/servers/${server.id}/edit`)}
                               >
                                 <Icon icon="lucide:pencil" width="14" height="14" />
                                 {t("common.edit")}
