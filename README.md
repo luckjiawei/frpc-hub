@@ -1,10 +1,12 @@
 <a name="readme-top"></a>
 
 <!-- PROJECT SHIELDS -->
+
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![Apache License][license-shield]][license-url]
+
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -43,6 +45,7 @@
 ## Milestones
 
 - 2026-03-03: Released v0.1.0
+- 2026-03-12: Released v0.1.1
 
 ## Star History
 
@@ -51,17 +54,10 @@
 <!-- MARKDOWN LINKS & IMAGES -->
 
 [forks-shield]: https://img.shields.io/github/forks/luckjiawei/frpc-hub.svg?style=for-the-badge
-
 [forks-url]: https://github.com/luckjiawei/frpc-hub/network/members
-
 [stars-shield]: https://img.shields.io/github/stars/luckjiawei/frpc-hub.svg?style=for-the-badge
-
 [stars-url]: https://github.com/luckjiawei/frpc-hub/stargazers
-
 [issues-shield]: https://img.shields.io/github/issues/luckjiawei/frpc-hub.svg?style=for-the-badge
-
 [issues-url]: https://github.com/luckjiawei/frpc-hub/issues
-
 [license-shield]: https://img.shields.io/github/license/luckjiawei/frpc-hub.svg?style=for-the-badge
-
 [license-url]: https://github.com/luckjiawei/frpc-hub/blob/main/LICENSE
