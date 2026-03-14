@@ -56,6 +56,7 @@
 
 - 2026-03-03: Released v0.1.0
 - 2026-03-12: Released v0.1.1
+- 2026-03-12: Released v0.1.2
 
 ## Star History
 
