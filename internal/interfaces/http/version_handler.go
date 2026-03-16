@@ -1,7 +1,7 @@
 package httphandler
 
 import (
-	"frpc-hub/internal/application/version"
+	"podux/internal/application/version"
 
 	"github.com/pocketbase/pocketbase/core"
 )

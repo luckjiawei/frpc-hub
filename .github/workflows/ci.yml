@@ -81,5 +81,5 @@ jobs:
           go build \
             -trimpath \
             -ldflags "-s -w -X main.Version=ci -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o /tmp/frpc-hub \
+            -o /tmp/podux \
             main.go

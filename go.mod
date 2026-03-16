@@ -1,4 +1,4 @@
-module frpc-hub
+module podux
 
 go 1.25.5
 

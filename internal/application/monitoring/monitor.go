@@ -3,7 +3,7 @@ package monitoring
 import (
 	"encoding/json"
 	"fmt"
-	"frpc-hub/pkg/utils"
+	"podux/pkg/utils"
 	"time"
 
 	"github.com/pocketbase/dbx"

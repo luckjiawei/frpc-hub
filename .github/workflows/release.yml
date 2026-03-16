@@ -9,7 +9,7 @@ env:
   GO_VERSION_FILE: go.mod
   NODE_VERSION: '20'
   PNPM_VERSION: '10'
-  APP_NAME: frpc-hub
+  APP_NAME: podux
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -197,7 +197,7 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
           labels: |
-            org.opencontainers.image.title=frpc-hub
+            org.opencontainers.image.title=podux
             org.opencontainers.image.description=FRP client hub with web UI
 
       - name: Build and push

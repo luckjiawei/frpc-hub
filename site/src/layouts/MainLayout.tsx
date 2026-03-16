@@ -142,11 +142,11 @@ export function MainLayout({ children }: MainLayoutProps) {
                       whileHover={{ scale: 1.1, rotate: 10 }}
                       whileTap={{ scale: 0.95 }}
                       src={logo}
-                      alt="Frpc Hub Logo"
+                      alt="Podux Logo"
                       className="h-8 w-8 cursor-pointer rounded-2xl object-contain"
                     />
                     <Text size="4" weight="bold">
-                      Frpc Hub
+                      Podux
                     </Text>
                   </Flex>
                 </Link>
@@ -342,7 +342,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               {/* Left: Copyright */}
               <Flex align="center" gap="2">
                 <Text size="1" color="gray">
-                  © 2026 Frpc Hub. All rights reserved.
+                  © 2026 Podux. All rights reserved.
                 </Text>
               </Flex>
 
@@ -398,7 +398,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               {/* Right: Links */}
               <Flex align="center" gap="4">
                 <a
-                  href="https://github.com/luckjiawei/frpc-hub"
+                  href="https://github.com/luckjiawei/podux"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="no-underline"
@@ -409,7 +409,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                     className="text-gray-500 transition-colors hover:text-gray-700"
                   >
                     <Icon icon="lucide:github" width="16" height="16" />
-                    <Text size="1">Frpc Hub</Text>
+                    <Text size="1">Podux</Text>
                   </Flex>
                 </a>
               </Flex>

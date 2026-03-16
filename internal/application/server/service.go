@@ -1,7 +1,7 @@
 package server
 
 import (
-	serverdomain "frpc-hub/internal/domain/server"
+	serverdomain "podux/internal/domain/server"
 
 	"github.com/pocketbase/pocketbase/core"
 )

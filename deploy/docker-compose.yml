@@ -1,16 +1,16 @@
 version: '3.8'
 
 services:
-  frpc-hub:
-    image: ghcr.io/luckjiawei/frpc-hub:${VERSION:-latest}
-    container_name: frpc-hub
+  podux:
+    image: ghcr.io/luckjiawei/podux:${VERSION:-latest}
+    container_name: podux
     restart: unless-stopped
 
     ports:
       - "8090:8090"
 
     volumes:
-      - frpc-hub-data:/app/pb_data
+      - podux-data:/app/pb_data
 
     environment:
       - TZ=Asia/Shanghai
@@ -44,9 +44,9 @@ services:
       retries: 3
 
 volumes:
-  frpc-hub-data:
+  podux-data:
     driver: local
 
 networks:
   default:
-    name: frpc-hub-network
+    name: podux-network

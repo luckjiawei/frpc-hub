@@ -19,8 +19,8 @@ build/dist/
 dist/
 *.tar.gz
 *.zip
-frpc-hub
-frpc-hub.exe
+podux
+podux.exe
 
 # Frontend (built inside Docker)
 site/node_modules/

@@ -4,22 +4,22 @@ version: '3.8'
 # Usage: docker compose -f docker-compose.build.yml up -d
 
 services:
-  frpc-hub:
+  podux:
     build:
       context: ..
       dockerfile: Dockerfile
       args:
         VERSION: ${VERSION:-latest}
         BUILD_TIME: ${BUILD_TIME:-$(date -u '+%Y-%m-%d_%H:%M:%S')}
-    image: frpc-hub:${VERSION:-latest}
-    container_name: frpc-hub
+    image: podux:${VERSION:-latest}
+    container_name: podux
     restart: unless-stopped
 
     ports:
       - "8090:8090"
 
     volumes:
-      - frpc-hub-data:/app/pb_data
+      - podux-data:/app/pb_data
 
     environment:
       - TZ=Asia/Shanghai
@@ -53,9 +53,9 @@ services:
       retries: 3
 
 volumes:
-  frpc-hub-data:
+  podux-data:
     driver: local
 
 networks:
   default:
-    name: frpc-hub-network
+    name: podux-network

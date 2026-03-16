@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for frpc-hub
+# Multi-stage Dockerfile for podux
 # Stage 1: Build frontend
 FROM --platform=linux/amd64 node:22-alpine AS frontend-builder
 
@@ -32,7 +32,7 @@ RUN GOARM=$(echo "${TARGETVARIANT}" | tr -d 'v') \
     CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
     -trimpath \
     -ldflags "-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME}" \
-    -o frpc-hub \
+    -o podux \
     main.go
 
 # Stage 3: Final runtime image
@@ -43,22 +43,22 @@ RUN apk add --no-cache \
     tzdata \
     && rm -rf /var/cache/apk/*
 
-RUN addgroup -g 1000 frpchub && \
-    adduser -D -u 1000 -G frpchub frpchub
+RUN addgroup -g 1000 podux && \
+    adduser -D -u 1000 -G podux podux
 
 WORKDIR /app
 
-COPY --from=backend-builder /app/frpc-hub .
+COPY --from=backend-builder /app/podux .
 
 RUN mkdir -p /app/pb_data && \
-    chown -R frpchub:frpchub /app
+    chown -R podux:podux /app
 
-USER frpchub
+USER podux
 
 EXPOSE 8090
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8090/api/health || exit 1
 
-ENTRYPOINT ["/app/frpc-hub"]
+ENTRYPOINT ["/app/podux"]
 CMD ["serve", "--http", "0.0.0.0:8090"]

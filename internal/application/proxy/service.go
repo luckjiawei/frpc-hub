@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	proxydomain "frpc-hub/internal/domain/proxy"
+	proxydomain "podux/internal/domain/proxy"
 
 	"github.com/pocketbase/pocketbase/core"
 )

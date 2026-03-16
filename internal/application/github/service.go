@@ -53,7 +53,7 @@ func (s *Service) GetFrpReleases() ([]GithubRelease, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "frpc-hub-server")
+	req.Header.Set("User-Agent", "podux-server")
 
 	resp, err := client.Do(req)
 	if err != nil {

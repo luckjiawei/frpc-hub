@@ -1,7 +1,7 @@
 package persistence
 
 import (
-	"frpc-hub/internal/domain/server"
+	"podux/internal/domain/server"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"

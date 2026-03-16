@@ -1,10 +1,10 @@
 package dashboard
 
 import (
-	proxyapp "frpc-hub/internal/application/proxy"
-	serverapp "frpc-hub/internal/application/server"
-	proxydomain "frpc-hub/internal/domain/proxy"
-	serverdomain "frpc-hub/internal/domain/server"
+	proxyapp "podux/internal/application/proxy"
+	serverapp "podux/internal/application/server"
+	proxydomain "podux/internal/domain/proxy"
+	serverdomain "podux/internal/domain/server"
 	"time"
 
 	"github.com/pocketbase/pocketbase/core"

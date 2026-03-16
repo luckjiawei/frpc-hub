@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Build script for frpc-hub - Multi-architecture support
+# Build script for podux - Multi-architecture support
 # Usage: ./build.sh [options]
 # Options:
 #   --arch <arch>    Build for specific architecture (linux-amd64, linux-arm64, darwin-amd64, darwin-arm64, windows-amd64, all)
@@ -10,7 +10,7 @@ set -e
 #   --help           Show this help message
 
 # Configuration
-APP_NAME="frpc-hub"
+APP_NAME="podux"
 VERSION=${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo "dev")}
 BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
 SITE_DIR="../site"

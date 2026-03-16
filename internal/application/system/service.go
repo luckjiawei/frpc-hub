@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"frpc-hub/pkg/buildinfo"
+	"podux/pkg/buildinfo"
 
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -168,15 +168,15 @@ type LatestVersionResponse struct {
 	HTMLURL string `json:"html_url"`
 }
 
-// GetLatestVersion fetches the latest frpc-hub release from GitHub.
+// GetLatestVersion fetches the latest podux release from GitHub.
 func (s *Service) GetLatestVersion() (*LatestVersionResponse, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/luckjiawei/frpc-hub/releases/latest", nil)
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/luckjiawei/podux/releases/latest", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "frpc-hub-server")
+	req.Header.Set("User-Agent", "podux-server")
 	req.Header.Set("Accept", "application/vnd.github+json")
 
 	resp, err := client.Do(req)

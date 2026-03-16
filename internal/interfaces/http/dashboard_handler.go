@@ -1,8 +1,8 @@
 package httphandler
 
 import (
-	"frpc-hub/internal/application/dashboard"
-	"frpc-hub/pkg/response"
+	"podux/internal/application/dashboard"
+	"podux/pkg/response"
 
 	"github.com/pocketbase/pocketbase/core"
 )
