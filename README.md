@@ -11,6 +11,9 @@
   <b>English</b> | <a href="README_zh.md">简体中文</a>
 </div>
 
+> **Project Renamed:** This project was previously known as **frpc-hub** and has been officially renamed to **Podux**.
+> The repository URL and all references have been updated accordingly.
+
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
