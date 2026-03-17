@@ -62,3 +62,10 @@ dist-ssr
 *.sln
 *.sw?
 __debug*
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
