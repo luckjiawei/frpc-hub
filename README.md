@@ -63,7 +63,7 @@
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=luckjiawei/podux&type=Date)](https://www.star-history.com/#luckjiawei/frpc-desktop&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=luckjiawei/podux&type=Date)](https://www.star-history.com/#luckjiawei/podux&Date)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
