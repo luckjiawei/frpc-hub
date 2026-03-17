@@ -391,7 +391,8 @@
     "checkUpdate": "Check for Updates",
     "upToDate": "You are up to date",
     "updateAvailable": "Update Available",
-    "updateNow": "View Release"
+    "updateNow": "View Release",
+    "releaseNotes": "Release Notes"
   },
   "import": {
     "title": "Import",

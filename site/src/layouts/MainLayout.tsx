@@ -83,6 +83,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [appVersion, setAppVersion] = useState<string>("");
   const [latestVersion, setLatestVersion] = useState<string>("");
   const [releaseUrl, setReleaseUrl] = useState<string>("");
+  const [releaseBody, setReleaseBody] = useState<string>("");
   const updateAvailable = appVersion && latestVersion ? isNewerVersion(latestVersion, appVersion) : false;
 
   useEffect(() => {
@@ -96,6 +97,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       .then((data) => {
         if (data.tag_name) setLatestVersion(data.tag_name);
         if (data.html_url) setReleaseUrl(data.html_url);
+        if (data.body) setReleaseBody(data.body);
       })
       .catch(() => {});
   }, []);
@@ -222,7 +224,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                       />
                     </motion.div>
                   </Popover.Trigger>
-                  <Popover.Content style={{ maxWidth: 280 }}>
+                  <Popover.Content style={{ maxWidth: 320 }}>
                     <Flex direction="column" gap="3">
                       <Flex align="center" gap="2">
                         <Icon icon="lucide:package" width="16" height="16" style={{ color: "var(--amber-11)" }} />
@@ -240,6 +242,24 @@ export function MainLayout({ children }: MainLayoutProps) {
                           <Text size="1" weight="medium" style={{ color: "var(--amber-11)" }}>{latestVersion}</Text>
                         </Flex>
                       </Flex>
+                      {releaseBody && (
+                        <Flex direction="column" gap="1">
+                          <Text size="1" color="gray" weight="medium">{t("version.releaseNotes")}</Text>
+                          <Box
+                            style={{
+                              maxHeight: 160,
+                              overflowY: "auto",
+                              backgroundColor: "var(--gray-a2)",
+                              borderRadius: "var(--radius-2)",
+                              padding: "8px",
+                            }}
+                          >
+                            <Text size="1" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                              {releaseBody}
+                            </Text>
+                          </Box>
+                        </Flex>
+                      )}
                       {releaseUrl && (
                         <a href={releaseUrl} target="_blank" rel="noopener noreferrer" className="no-underline">
                           <Flex

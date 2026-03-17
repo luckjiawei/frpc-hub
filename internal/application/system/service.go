@@ -166,13 +166,14 @@ func (s *Service) GetAppVersion() string {
 type LatestVersionResponse struct {
 	TagName string `json:"tag_name"`
 	HTMLURL string `json:"html_url"`
+	Body    string `json:"body"`
 }
 
 // GetLatestVersion fetches the latest podux release from GitHub.
 func (s *Service) GetLatestVersion() (*LatestVersionResponse, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/luckjiawei/podux/releases/latest", nil)
+	req, err := http.NewRequest("GET", "https://ghp.podux.io/repos/luckjiawei/podux/releases/latest", nil)
 	if err != nil {
 		return nil, err
 	}

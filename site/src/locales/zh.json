@@ -391,7 +391,8 @@
     "checkUpdate": "检查更新",
     "upToDate": "已是最新版本",
     "updateAvailable": "有可用更新",
-    "updateNow": "查看发布"
+    "updateNow": "查看发布",
+    "releaseNotes": "更新内容"
   },
   "import": {
     "title": "导入",
