@@ -28,9 +28,9 @@
     <br />
     Manage all your clients, proxies, and connections from one place. No terminal. No config editing.
     <br /><br />
-    <a href="https://frpchub.jwinks.com/en/guide/getting-started.html"><strong>🚀 Quick Start</strong></a>
+    <a href="https://podux.io/en/guide/getting-started.html"><strong>🚀 Quick Start</strong></a>
     &nbsp;&nbsp;·&nbsp;&nbsp;
-    <a href="https://frpchub.jwinks.com/"><strong>📖 Documentation</strong></a>
+    <a href="https://podux.io/"><strong>📖 Documentation</strong></a>
     &nbsp;&nbsp;·&nbsp;&nbsp;
     <a href="https://github.com/luckjiawei/podux/issues">🐛 Report Bug</a>
     &nbsp;&nbsp;·&nbsp;&nbsp;
