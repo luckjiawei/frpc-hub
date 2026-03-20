@@ -281,6 +281,7 @@
     "customDomainsLabel": "自定义域名",
     "customDomainsPlaceholder": "example.com, www.example.com",
     "customDomainsDesc": "多个域名用逗号分隔",
+    "addCustomDomain": "添加域名",
     "subdomain": "子域名",
     "subdomainPlaceholder": "myapp",
     "subdomainDesc": "代理的子域名",

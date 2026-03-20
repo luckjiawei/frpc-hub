@@ -58,7 +58,7 @@ interface ProxyFormPageViewProps {
   isHttpType: boolean;
   isSocks5Plugin: boolean;
   mounted: boolean;
-  onChange: (field: keyof ProxyFormData, value: string | boolean) => void;
+  onChange: (field: keyof ProxyFormData, value: string | boolean | string[]) => void;
   onSubmit: () => void;
   onCancel: () => void;
   onNavigateToServers: () => void;
@@ -240,15 +240,44 @@ export function ProxyFormPageView({
                   {isHttpType ? (
                     <>
                       <FormItem label={t("proxy.customDomainsLabel")}>
-                        <TextField.Root
-                          size="2"
-                          placeholder={t("proxy.customDomainsPlaceholder")}
-                          value={formData.customDomains}
-                          onChange={(e) => onChange("customDomains", e.target.value)}
-                        />
-                        <Text size="1" color="gray" mt="1">
-                          {t("proxy.customDomainsDesc")}
-                        </Text>
+                        <Flex direction="column" gap="2">
+                          {formData.customDomains.map((domain, index) => (
+                            <Flex key={index} gap="2" align="center">
+                              <TextField.Root
+                                size="2"
+                                style={{ flex: 1 }}
+                                placeholder={`example.com`}
+                                value={domain}
+                                onChange={(e) => {
+                                  const next = [...formData.customDomains];
+                                  next[index] = e.target.value;
+                                  onChange("customDomains", next);
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                size="2"
+                                variant="soft"
+                                color="red"
+                                onClick={() => {
+                                  const next = formData.customDomains.filter((_, i) => i !== index);
+                                  onChange("customDomains", next);
+                                }}
+                              >
+                                <Icon icon="lucide:x" />
+                              </Button>
+                            </Flex>
+                          ))}
+                          <Button
+                            type="button"
+                            size="2"
+                            variant="soft"
+                            onClick={() => onChange("customDomains", [...formData.customDomains, ""])}
+                          >
+                            <Icon icon="lucide:plus" />
+                            {t("proxy.addCustomDomain")}
+                          </Button>
+                        </Flex>
                       </FormItem>
                       <FormItem label={t("proxy.subdomain")}>
                         <TextField.Root

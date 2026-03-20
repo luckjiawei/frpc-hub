@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import pb from "../../../lib/pocketbase";
+import { apiGet } from "../../../lib/api";
 import { toast } from "sonner";
 import { REGEX } from "../../../lib/regex";
 
@@ -12,7 +13,7 @@ export interface ProxyFormData {
   localIp: string;
   localPort: string;
   remotePort: string;
-  customDomains: string;
+  customDomains: string[];
   subdomain: string;
   encryption: boolean;
   compression: boolean;
@@ -30,7 +31,7 @@ const DEFAULT_FORM: ProxyFormData = {
   localIp: "127.0.0.1",
   localPort: "",
   remotePort: "",
-  customDomains: "",
+  customDomains: [],
   subdomain: "",
   encryption: false,
   compression: false,
@@ -68,16 +69,9 @@ export function useProxyForm() {
     const fetchServers = async () => {
       try {
         setLoadingServers(true);
-        const records = await pb.collection("fh_servers").getFullList({
-          sort: "-created",
-          fields: "id,serverName,bootStatus,networkStatus",
-        });
-        const list = records.map((r) => ({
-          id: r.id,
-          serverName: r.serverName as string,
-          bootStatus: (r.bootStatus as string) || "stopped",
-          networkStatus: r.networkStatus as ServerOption["networkStatus"],
-        }));
+        const res = await apiGet("/api/servers/options");
+        if (!res.ok) throw new Error("Failed to fetch servers");
+        const list: ServerOption[] = await res.json();
         setServers(list);
         if (list.length > 0 && !isEditing) {
           setFormData((prev) => ({ ...prev, serverId: list[0].id }));
@@ -107,7 +101,7 @@ export function useProxyForm() {
           localPort: String(record.localPort || ""),
           remotePort: String(record.remotePort || ""),
           subdomain: (record.subdomain as string) || "",
-          customDomains: (record.customDomains as string[] | undefined)?.join(", ") || "",
+          customDomains: (record.customDomains as string[] | undefined) || [],
           encryption: (record.transport as Record<string, boolean> | undefined)?.use_encryption || false,
           compression: (record.transport as Record<string, boolean> | undefined)?.use_compression || false,
           description: (record.description as string) || "",
@@ -145,7 +139,7 @@ export function useProxyForm() {
     setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
-  const handleChange = (field: keyof ProxyFormData, value: string | boolean) => {
+  const handleChange = (field: keyof ProxyFormData, value: string | boolean | string[]) => {
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
       if (field === "type" && value !== "tcp" && prev.pluginEnabled && prev.pluginType === "socks5") {
@@ -154,6 +148,9 @@ export function useProxyForm() {
       return next;
     });
     if (typeof value === "string") validateField(field, value);
+    if (Array.isArray(value) && field === "customDomains") {
+      setErrors((prev) => ({ ...prev, customDomains: undefined }));
+    }
   };
 
   const validate = (data: ProxyFormData): boolean => {
@@ -178,7 +175,7 @@ export function useProxyForm() {
       else if (!REGEX.PORT.test(data.remotePort)) newErrors.remotePort = t("proxy.errorInvalidPort");
     }
 
-    if (isHttp && !data.subdomain && !data.customDomains) {
+    if (isHttp && !data.subdomain && data.customDomains.length === 0) {
       newErrors.subdomain = t("proxy.errorSubdomainRequired");
     }
 
@@ -205,9 +202,7 @@ export function useProxyForm() {
       localPort: formData.localPort,
       remotePort: formData.remotePort,
       subdomain: formData.subdomain,
-      customDomains: formData.customDomains
-        ? formData.customDomains.split(",").map((d) => d.trim()).filter(Boolean)
-        : [],
+      customDomains: formData.customDomains,
       transport: {
         use_encryption: formData.encryption,
         use_compression: formData.compression,

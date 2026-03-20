@@ -281,6 +281,7 @@
     "customDomainsLabel": "Custom Domains",
     "customDomainsPlaceholder": "example.com, www.example.com",
     "customDomainsDesc": "Multiple domains separated by commas",
+    "addCustomDomain": "Add Domain",
     "subdomain": "Subdomain",
     "subdomainPlaceholder": "myapp",
     "subdomainDesc": "Subdomain for the proxy",
