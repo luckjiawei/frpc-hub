@@ -238,7 +238,21 @@
     "startSuccess": "服务器启动成功",
     "startFailed": "服务器启动失败",
     "stopSuccess": "服务器停止成功",
-    "stopFailed": "服务器停止失败"
+    "stopFailed": "服务器停止失败",
+    "statusCard": "服务器状态",
+    "latencyChartCard": "延迟曲线",
+    "probeNormal": "正常",
+    "probePartial": "部分异常",
+    "probeOutage": "异常",
+    "probeChecking": "检测中",
+    "probeUptime": "可达率",
+    "probeAvgLatency": "平均延迟",
+    "probePeakLatency": "峰值延迟",
+    "probeNoData": "无数据",
+    "probeUnreachable": "不可达",
+    "probeNow": "现在",
+    "probe30mAgo": "30 分钟前",
+    "latencyMs": "延迟 (ms)"
   },
   "proxy": {
     "title": "代理",

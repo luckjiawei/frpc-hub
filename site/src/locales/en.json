@@ -238,7 +238,21 @@
     "startSuccess": "Server started successfully",
     "startFailed": "Failed to start server",
     "stopSuccess": "Server stopped successfully",
-    "stopFailed": "Failed to stop server"
+    "stopFailed": "Failed to stop server",
+    "statusCard": "Server Status",
+    "latencyChartCard": "Latency History",
+    "probeNormal": "Normal",
+    "probePartial": "Partial Outage",
+    "probeOutage": "Outage",
+    "probeChecking": "Checking",
+    "probeUptime": "Uptime",
+    "probeAvgLatency": "Avg Latency",
+    "probePeakLatency": "Peak Latency",
+    "probeNoData": "No data",
+    "probeUnreachable": "Unreachable",
+    "probeNow": "Now",
+    "probe30mAgo": "30 min ago",
+    "latencyMs": "Latency (ms)"
   },
   "proxy": {
     "title": "Proxies",

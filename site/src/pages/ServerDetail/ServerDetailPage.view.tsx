@@ -8,8 +8,9 @@ import pb from "../../lib/pocketbase";
 import type { Server } from "../Servers/useServers";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ServerLatency } from "../../components/ServerLatency";
 import { ServerLocation } from "../../components/ServerLocation";
+import { ProbeHistory } from "../../components/ProbeHistory";
+import { LatencyChart } from "../../components/LatencyChart";
 import { useTranslation } from "react-i18next";
 import { useServerProxies } from "./useServerProxies";
 import { apiPost } from "../../lib/api";
@@ -241,14 +242,7 @@ export function ServerDetailPage() {
                     </Text>
                   </Box>
                 )}
-                <Box>
-                  <Text size="2" color="gray">
-                    {t("server.latency")}
-                  </Text>
-                  <Box mt="1">
-                    <ServerLatency networkStatus={server.networkStatus} size="3" />
-                  </Box>
-                </Box>
+
                 <Box>
                   <Text size="2" color="gray">
                     {t("server.location")}
@@ -363,6 +357,34 @@ export function ServerDetailPage() {
           </Card>
         </motion.div>
       </Grid>
+
+      {/* Probe History */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={mounted ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+      >
+        <Card size="3">
+          <Flex direction="column" gap="3">
+            <Heading size="4">{t("server.statusCard")}</Heading>
+            <ProbeHistory serverId={id!} />
+          </Flex>
+        </Card>
+      </motion.div>
+
+      {/* Latency Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={mounted ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+      >
+        <Card size="3">
+          <Flex direction="column" gap="3">
+            <Heading size="4">{t("server.latencyChartCard")}</Heading>
+            <LatencyChart serverId={id!} />
+          </Flex>
+        </Card>
+      </motion.div>
 
       {/* Proxy List */}
       <motion.div

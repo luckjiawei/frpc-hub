@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import pb from "../../lib/pocketbase";
-import { apiPost } from "../../lib/api";
+import { apiGet, apiPost } from "../../lib/api";
 import { toast } from "sonner";
 
 export interface Server {
@@ -75,26 +75,24 @@ export function useServers() {
   const fetchServers = useCallback(
     async (isRefresh = false) => {
       try {
-        // Only show loading spinner on initial load, not on refresh
         if (!isRefresh && servers.length === 0) {
           setLoading(true);
         } else if (isRefresh) {
           setRefreshing(true);
         }
 
-        const options: any = {
-          sort: "-created",
-        };
+        const params = new URLSearchParams({
+          page: String(page),
+          perPage: String(PER_PAGE),
+        });
+        if (search) params.set("search", search);
 
-        if (search) {
-          options.filter = `serverName ~ "${search}" || serverAddr ~ "${search}" || description ~ "${search}"`;
-        }
+        const res = await apiGet(`/api/servers?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch servers");
+        const data = await res.json();
 
-        const result = await pb.collection("fh_servers").getList<Server>(page, PER_PAGE, options);
-
-        // Network status is already stored in database, no need to fetch separately
-        setServers(result.items);
-        setTotalPages(result.totalPages);
+        setServers(data.items);
+        setTotalPages(data.totalPages);
       } catch (err) {
         if ((err as any)?.isAbort) return;
         toast.error(err instanceof Error ? err.message : "Failed to fetch servers");

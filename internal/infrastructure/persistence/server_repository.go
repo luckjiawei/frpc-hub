@@ -79,10 +79,11 @@ func (r *ServerRepository) ResetAllBootStatus() error {
 
 func (r *ServerRepository) GetMaxLatency() (int64, error) {
 	var maxLatency int64
+	// Get the max latency among each target's most recent measurement.
 	err := r.app.DB().
-		Select("MAX(CAST(json_extract(networkStatus, '$.latency') AS INTEGER))").
-		From("fh_servers").
-		Where(dbx.NewExp("networkStatus IS NOT NULL AND networkStatus != ''")).
+		Select("MAX(val)").
+		From("fh_metrics_raw").
+		Where(dbx.NewExp("metric_key = 'frps_delay' AND t IN (SELECT MAX(t) FROM fh_metrics_raw WHERE metric_key = 'frps_delay' GROUP BY target_id)")).
 		Row(&maxLatency)
 
 	if err != nil {

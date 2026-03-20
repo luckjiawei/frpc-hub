@@ -13,18 +13,20 @@ import (
 // MonitorService is the background network monitoring service.
 type MonitorService struct {
 	app            core.App
-	networkService *NetworkService
-	stopChan       chan bool
+	geoService     *GeoService
+	metricsService *MetricsService
+	stopChan       chan struct{}
 	latencyTicker  *time.Ticker
 	geoTicker      *time.Ticker
 }
 
 // NewMonitorService creates a new network monitoring service.
-func NewMonitorService(app core.App, networkService *NetworkService) *MonitorService {
+func NewMonitorService(app core.App, geoService *GeoService, metricsService *MetricsService) *MonitorService {
 	return &MonitorService{
 		app:            app,
-		networkService: networkService,
-		stopChan:       make(chan bool),
+		geoService:     geoService,
+		metricsService: metricsService,
+		stopChan:       make(chan struct{}),
 	}
 }
 
@@ -41,30 +43,26 @@ func (s *MonitorService) Start(latencyInterval, geoInterval time.Duration) {
 	go s.updateAllServersGeoLocation()
 
 	s.latencyTicker = time.NewTicker(latencyInterval)
-	go func() {
-		for {
-			select {
-			case <-s.latencyTicker.C:
-				s.updateAllServersLatency()
-			case <-s.stopChan:
-				return
-			}
-		}
-	}()
+	s.startTicker(s.latencyTicker, s.updateAllServersLatency)
 
 	s.geoTicker = time.NewTicker(geoInterval)
+	s.startTicker(s.geoTicker, s.updateAllServersGeoLocation)
+
+	s.app.Logger().Info("Network monitor service started successfully")
+}
+
+// startTicker runs fn on each tick until stopped.
+func (s *MonitorService) startTicker(ticker *time.Ticker, fn func()) {
 	go func() {
 		for {
 			select {
-			case <-s.geoTicker.C:
-				s.updateAllServersGeoLocation()
+			case <-ticker.C:
+				fn()
 			case <-s.stopChan:
 				return
 			}
 		}
 	}()
-
-	s.app.Logger().Info("Network monitor service started successfully")
 }
 
 // Stop halts the background monitoring task.
@@ -129,32 +127,16 @@ func (s *MonitorService) updateAllServersGeoLocation() {
 	}
 }
 
-// updateServerLatency updates latency for a single server.
+// updateServerLatency pings a single server and records the result to metrics.
 func (s *MonitorService) updateServerLatency(serverID string, serverAddr string, serverPort int) {
 	addr := fmt.Sprintf("%s:%d", serverAddr, serverPort)
 	pingResult := utils.PingHost(addr, 5*time.Second)
 
-	networkStatus := map[string]interface{}{
-		"latency":       pingResult.Latency,
-		"reachable":     pingResult.Reachable,
-		"lastCheckTime": time.Now().Format(time.RFC3339),
-		"error":         pingResult.Error,
+	if err := s.metricsService.RecordServerLatency(serverID, pingResult.Latency); err != nil {
+		s.app.Logger().Error("Failed to record server latency metric", "serverId", serverID, "error", err)
 	}
 
-	networkStatusJSON, _ := json.Marshal(networkStatus)
-
-	_, err := s.app.DB().
-		Update("fh_servers",
-			dbx.Params{"networkStatus": string(networkStatusJSON)},
-			dbx.HashExp{"id": serverID},
-		).Execute()
-
-	if err != nil {
-		s.app.Logger().Error("Failed to update server latency", "serverId", serverID, "error", err)
-		return
-	}
-
-	s.app.Logger().Debug("Updated latency",
+	s.app.Logger().Debug("Checked latency",
 		"serverId", serverID,
 		"addr", serverAddr,
 		"latency", pingResult.Latency,
@@ -164,23 +146,17 @@ func (s *MonitorService) updateServerLatency(serverID string, serverAddr string,
 
 // updateServerGeoLocation updates geolocation for a single server.
 func (s *MonitorService) updateServerGeoLocation(serverID string, serverAddr string) {
-	location, err := s.networkService.getGeoLocationWithCache(serverAddr)
+	location, err := s.geoService.Lookup(serverAddr)
 	if err != nil {
 		s.app.Logger().Warn("Failed to get geo location", "serverId", serverID, "addr", serverAddr, "error", err)
 		return
 	}
 
-	geoLocation := map[string]interface{}{
-		"country":     location.Country,
-		"countryCode": location.CountryCode,
-		"region":      location.Region,
-		"city":        location.City,
-		"isp":         location.ISP,
-		"lat":         location.Latitude,
-		"lon":         location.Longitude,
+	geoLocationJSON, err := json.Marshal(location)
+	if err != nil {
+		s.app.Logger().Error("Failed to marshal geo location", "serverId", serverID, "error", err)
+		return
 	}
-
-	geoLocationJSON, _ := json.Marshal(geoLocation)
 
 	_, err = s.app.DB().
 		Update("fh_servers",
