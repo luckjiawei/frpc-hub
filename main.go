@@ -2,9 +2,9 @@ package main
 
 import (
 	"embed"
+	"github.com/spf13/cobra"
 	"io/fs"
 	"log"
-	"github.com/spf13/cobra"
 
 	"podux/internal/application/dashboard"
 	"podux/internal/application/frpc"
@@ -45,8 +45,9 @@ func main() {
 	frpcService := frpc.NewService(app, serverRepo, proxyRepo)
 	dashboardService := dashboard.NewService(app, serverService, proxyService)
 	settingsService := system.NewService(app)
-	networkService := monitoring.NewNetworkService(app)
-	networkMonitorService := monitoring.NewMonitorService(app, networkService)
+	geoService := monitoring.NewGeoService(app)
+	metricsService := monitoring.NewMetricsService(app)
+	networkMonitorService := monitoring.NewMonitorService(app, geoService, metricsService)
 	importService := importer.NewService(app)
 	versionService := version.NewService(app)
 	//githubService := github.NewService(app)
@@ -58,6 +59,7 @@ func main() {
 	dashboardHandler := httphandler.NewDashboardHandler(dashboardService)
 	systemHandler := httphandler.NewSystemHandler(app, settingsService)
 	importHandler := httphandler.NewImportHandler(app, importService)
+	serverHandler := httphandler.NewServerHandler(app, metricsService)
 
 	// Hook: Reload frpc when proxy is updated
 	app.OnRecordAfterUpdateSuccess("fh_proxies").BindFunc(func(e *core.RecordEvent) error {
@@ -95,6 +97,7 @@ func main() {
 		dashboardHandler.RegisterHandlers(e)
 		systemHandler.RegisterHandlers(e)
 		importHandler.RegisterHandlers(e)
+		serverHandler.RegisterHandlers(e)
 
 		// Serve static files from embedded FS
 		content, err := fs.Sub(pbPublicDir, "pb_public")
