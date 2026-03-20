@@ -960,6 +960,16 @@ func init() {
 					},
 					{
 						"hidden": false,
+						"id": "json3916310420",
+						"maxSize": 0,
+						"name": "plugin",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					},
+					{
+						"hidden": false,
 						"id": "autodate2990389176",
 						"name": "created",
 						"onCreate": true,
@@ -1154,14 +1164,18 @@ func init() {
 						"type": "json"
 					},
 					{
+						"autogeneratePattern": "",
 						"hidden": false,
-						"id": "json948844010",
-						"maxSize": 0,
-						"name": "networkStatus",
+						"id": "text2375276105",
+						"max": 0,
+						"min": 0,
+						"name": "user",
+						"pattern": "",
 						"presentable": false,
+						"primaryKey": false,
 						"required": false,
 						"system": false,
-						"type": "json"
+						"type": "text"
 					},
 					{
 						"hidden": false,
@@ -1337,6 +1351,139 @@ func init() {
 				"type": "base",
 				"updateRule": "@request.auth.id != ''",
 				"viewRule": "@request.auth.id != ''"
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "select2505851765",
+						"maxSelect": 1,
+						"name": "metric_key",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"frps_delay"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "date2238339752",
+						"max": "",
+						"min": "",
+						"name": "t",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "number2548021861",
+						"max": null,
+						"min": null,
+						"name": "val",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_1442576311",
+						"hidden": false,
+						"id": "relation361630566",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "target_id",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "relation"
+					}
+				],
+				"id": "pbc_793044944",
+				"indexes": [
+					"CREATE INDEX ` + "`" + `idx_ccjpJ7y6sJ` + "`" + ` ON ` + "`" + `fh_metrics_raw` + "`" + ` (\n  ` + "`" + `target_id` + "`" + `,\n  ` + "`" + `t` + "`" + `,\n  ` + "`" + `metric_key` + "`" + `\n)"
+				],
+				"listRule": null,
+				"name": "fh_metrics_raw",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_3738798621",
+						"hidden": false,
+						"id": "relation2665642495",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "serverId",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_2245327697",
+						"hidden": false,
+						"id": "relation2990786978",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "proxyId",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					}
+				],
+				"id": "pbc_1442576311",
+				"indexes": [],
+				"listRule": null,
+				"name": "fh_metrics_targets",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
 			}
 		]`
 
