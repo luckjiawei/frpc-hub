@@ -14,7 +14,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AnimateNumber } from "../../components/AnimateNumber";
 import { useTranslation } from "react-i18next";
-import "./DashboardPage.css";
 
 interface DashboardViewProps {
   stats: DashboardStats;
@@ -271,6 +270,8 @@ export function DashboardView({ stats, topology }: DashboardViewProps) {
                           borderRadius: "var(--radius-3)",
                           fontSize: "12px",
                         }}
+                        labelStyle={{ color: "var(--gray-12)" }}
+                        itemStyle={{ color: "var(--gray-12)" }}
                       />
                       <Legend />
                     </PieChart>
