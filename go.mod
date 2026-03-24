@@ -3,7 +3,7 @@ module podux
 go 1.25.5
 
 require (
-	github.com/fatedier/frp v0.67.0
+	github.com/fatedier/frp v0.68.0
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/pocketbase/dbx v1.11.0
 	github.com/pocketbase/pocketbase v0.35.0
