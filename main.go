@@ -11,6 +11,7 @@ import (
 	"podux/internal/application/importer"
 	"podux/internal/application/monitoring"
 	"podux/internal/application/proxy"
+	"podux/internal/application/scanner"
 	"podux/internal/application/server"
 	"podux/internal/application/system"
 	"podux/internal/application/version"
@@ -51,11 +52,13 @@ func main() {
 	networkMonitorService := monitoring.NewMonitorService(app, geoService, metricsService)
 	importService := importer.NewService(app)
 	versionService := version.NewService(app)
+	scannerService := scanner.NewService()
 	//githubService := github.NewService(app)
 
 	// HTTP Handlers
 	//githubHandler := httphandler.NewGithubHandler(app, githubService)
 	frpcHandler := httphandler.NewFrpcHandler(app, frpcService)
+	scannerHandler := httphandler.NewScannerHandler(app, scannerService)
 	versionHandler := httphandler.NewVersionHandler(app, versionService)
 	dashboardHandler := httphandler.NewDashboardHandler(dashboardService)
 	systemHandler := httphandler.NewSystemHandler(app, settingsService)
@@ -100,6 +103,7 @@ func main() {
 		systemHandler.RegisterHandlers(e)
 		importHandler.RegisterHandlers(e)
 		serverHandler.RegisterHandlers(e)
+		scannerHandler.RegisterHandlers(e)
 
 		// Serve static files from embedded FS
 		content, err := fs.Sub(pbPublicDir, "pb_public")

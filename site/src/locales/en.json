@@ -40,7 +40,8 @@
     "logout": "Logout",
     "pbAdmin": "Admin Panel",
     "version": "Version",
-    "import": "Import"
+    "import": "Import",
+    "scanner": "Scanner"
   },
   "auth": {
     "login": "Login",
@@ -487,5 +488,38 @@
       "setupFailed": "Failed to initialize system. Please try again.",
       "settingsCreateFailed": "Failed to initialize system settings"
     }
+  },
+  "scanner": {
+    "title": "LAN Scanner",
+    "description": "Discover devices on your local network and scan their open ports",
+    "step1Title": "Step 1 — Device Discovery",
+    "step1Desc": "Scan your local network for active hosts using ARP. Requires root / CAP_NET_RAW on the server.",
+    "discovering": "Scanning...",
+    "discoverBtn": "Start Discovery",
+    "devicesFound": "{{count}} device(s) found",
+    "hosts": "hosts",
+    "ipAddress": "IP Address",
+    "macAddress": "MAC Address",
+    "hostname": "Hostname",
+    "iface": "Interface",
+    "scanPorts": "Scan Ports",
+    "scanTarget": "Target",
+    "startScan": "Start Port Scan",
+    "stop": "Stop",
+    "mode": "Mode",
+    "modeCommon": "Common",
+    "modeCustom": "Custom",
+    "modeFull": "All ports",
+    "customPorts": "Custom ports",
+    "customPortsPlaceholder": "e.g. 22,80,443,8080",
+    "customPortsHint": "Comma-separated port numbers",
+    "fullScanWarning": "Scanning all 65535 ports will take several minutes. The results will stream in real time.",
+    "scanned": "Scanned",
+    "openPorts": "Open",
+    "complete": "Done",
+    "port": "Port",
+    "status": "Status",
+    "service": "Service",
+    "open": "Open"
   }
 }

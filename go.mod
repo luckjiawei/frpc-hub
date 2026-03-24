@@ -3,7 +3,7 @@ module podux
 go 1.25.5
 
 require (
-	github.com/fatedier/frp v0.68.0
+	github.com/fatedier/frp v0.67.0
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/pocketbase/dbx v1.11.0
 	github.com/pocketbase/pocketbase v0.35.0
@@ -26,6 +26,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect

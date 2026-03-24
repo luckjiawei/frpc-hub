@@ -40,7 +40,8 @@
     "logout": "退出登录",
     "pbAdmin": "后台管理",
     "version": "版本",
-    "import": "导入"
+    "import": "导入",
+    "scanner": "局域网扫描"
   },
   "auth": {
     "login": "登录",
@@ -487,5 +488,38 @@
       "setupFailed": "系统初始化失败。请重试。",
       "settingsCreateFailed": "初始化系统设置失败"
     }
+  },
+  "scanner": {
+    "title": "局域网扫描",
+    "description": "发现局域网内的在线设备并扫描其开放端口",
+    "step1Title": "第一步 — 设备发现",
+    "step1Desc": "使用 ARP 扫描本地网络中的活跃主机。服务器需要 root 权限或 CAP_NET_RAW 能力。",
+    "discovering": "扫描中...",
+    "discoverBtn": "开始发现",
+    "devicesFound": "发现 {{count}} 台设备",
+    "hosts": "台主机",
+    "ipAddress": "IP 地址",
+    "macAddress": "MAC 地址",
+    "hostname": "主机名",
+    "iface": "网口",
+    "scanPorts": "扫描端口",
+    "scanTarget": "目标",
+    "startScan": "开始端口扫描",
+    "stop": "停止",
+    "mode": "模式",
+    "modeCommon": "常用端口",
+    "modeCustom": "自定义",
+    "modeFull": "全部端口",
+    "customPorts": "自定义端口",
+    "customPortsPlaceholder": "例如 22,80,443,8080",
+    "customPortsHint": "用逗号分隔端口号",
+    "fullScanWarning": "扫描全部 65535 个端口将耗时数分钟，结果会实时流式显示。",
+    "scanned": "已扫描",
+    "openPorts": "开放",
+    "complete": "完成",
+    "port": "端口",
+    "status": "状态",
+    "service": "服务",
+    "open": "开放"
   }
 }

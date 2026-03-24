@@ -32,6 +32,9 @@ const ServerFormPage = lazy(() =>
 const ServerLogPage = lazy(() =>
   import("./pages/ServerLog/ServerLogPage").then((m) => ({ default: m.ServerLogPage }))
 );
+const ScannerPage = lazy(() =>
+  import("./pages/Scanner").then((m) => ({ default: m.ScannerPage }))
+);
 
 function AuthenticatedLayout() {
   console.log("AuthenticatedLayout rendered");
@@ -77,6 +80,7 @@ function App() {
             <Route path="/servers/:id/logs" element={<ServerLogPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/import" element={<ImportPage />} />
+            <Route path="/scanner" element={<ScannerPage />} />
             {/* <Route path="/versions" element={<VersionPage />} /> */}
           </Route>
 
