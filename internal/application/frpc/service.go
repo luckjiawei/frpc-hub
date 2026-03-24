@@ -21,6 +21,7 @@ import (
 	"podux/pkg/utils"
 
 	"github.com/fatedier/frp/client"
+	frpcsource "github.com/fatedier/frp/pkg/config/source"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/util/log"
 	"github.com/pocketbase/pocketbase/core"
@@ -235,10 +236,6 @@ func (fs *Service) LaunchFrpc(serverId *string) error {
 
 	fs.app.Logger().Debug("Config", "serverAddr", cfg.ServerAddr, "serverPort", cfg.ServerPort, "proxyCount", len(proxyCfgs))
 
-	for _, c := range proxyCfgs {
-		c.Complete(cfg.User)
-	}
-
 	// Print frp configurations in logs with sensitive data masked
 	commonCfgBytes, _ := json.Marshal(cfg)
 	proxyCfgsBytes, _ := json.Marshal(proxyCfgs)
@@ -251,9 +248,13 @@ func (fs *Service) LaunchFrpc(serverId *string) error {
 	cfg.Complete()
 	log.InitLogger(cfg.Log.To, cfg.Log.Level, int(cfg.Log.MaxDays), cfg.Log.DisablePrintColor)
 
+	configSrc := frpcsource.NewConfigSource()
+	if err := configSrc.ReplaceAll(proxyCfgs, nil); err != nil {
+		return err
+	}
 	svr, err := client.NewService(client.ServiceOptions{
-		Common:    cfg,
-		ProxyCfgs: proxyCfgs,
+		Common:                 cfg,
+		ConfigSourceAggregator: frpcsource.NewAggregator(configSrc),
 	})
 	if err != nil {
 		fs.app.Logger().Error("NewService", "err", err)
@@ -284,13 +285,13 @@ func (fs *Service) LaunchFrpc(serverId *string) error {
 		done <- err
 	}()
 
-	go fs.monitorServiceStatus(serverId, svr, ctx, done, cfg.User)
+	go fs.monitorServiceStatus(serverId, svr, ctx, done)
 
 	return nil
 }
 
 // monitorServiceStatus monitors service status and updates the database.
-func (fs *Service) monitorServiceStatus(id *string, svr *client.Service, ctx context.Context, done <-chan error, user string) {
+func (fs *Service) monitorServiceStatus(id *string, svr *client.Service, ctx context.Context, done <-chan error) {
 	time.Sleep(2 * time.Second)
 
 	select {
@@ -307,7 +308,7 @@ func (fs *Service) monitorServiceStatus(id *string, svr *client.Service, ctx con
 		fs.app.Logger().Info("Service is running", "id", *id)
 	}
 
-	go fs.monitorProxyStatus(id, svr, ctx, user)
+	go fs.monitorProxyStatus(id, svr, ctx)
 
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -342,7 +343,7 @@ func (fs *Service) destroying(id *string) {
 }
 
 // monitorProxyStatus monitors proxy status from frp and updates the database.
-func (fs *Service) monitorProxyStatus(serverId *string, svr *client.Service, ctx context.Context, user string) {
+func (fs *Service) monitorProxyStatus(serverId *string, svr *client.Service, ctx context.Context) {
 	fs.app.Logger().Info("Starting proxy status monitoring", "serverId", *serverId)
 
 	statusExporter := svr.StatusExporter()
@@ -364,11 +365,13 @@ func (fs *Service) monitorProxyStatus(serverId *string, svr *client.Service, ctx
 
 			for _, proxy := range proxies {
 				baseName := proxy.Name + "-" + proxy.Id
-				prefix := ""
-				if user != "" {
-					prefix = user + "."
-				}
-				status, exists := statusExporter.GetProxyStatus(prefix + baseName)
+				status, exists := statusExporter.GetProxyStatus(baseName)
+				fs.app.Logger().Info("proxy status check", "baseName", baseName, "exists", exists, "phase", func() string {
+					if status != nil {
+						return status.Phase
+					}
+					return "nil"
+				}())
 
 				if exists {
 					var bootStatus proxydomain.ProxyBootStatus
@@ -491,15 +494,6 @@ func (fs *Service) ReloadFrpc(serverId *string) error {
 	proxyCfgs, err := fs.genProxyCfgs(serverId)
 	if err != nil {
 		return err
-	}
-
-	server, err := fs.app.FindRecordById("fh_servers", *serverId)
-	if err != nil {
-		return err
-	}
-	user := server.GetString("user")
-	for _, c := range proxyCfgs {
-		c.Complete(user)
 	}
 
 	proxyCfgsBytes, _ := json.Marshal(proxyCfgs)
