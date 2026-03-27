@@ -6,8 +6,17 @@ import { apiGet } from "../../../lib/api";
 import { toast } from "sonner";
 import { REGEX } from "../../../lib/regex";
 
+export interface IntegrationOption {
+  id: string;
+  name: string;
+  integrationsType: string;
+  status: string;
+}
+
 export interface ProxyFormData {
+  proxyBackend: "frp" | "cloudflare";
   serverId: string;
+  integrationId: string;
   name: string;
   type: "tcp" | "udp" | "http" | "https" | "tcpmux" | "stcp" | "sudp" | "xtcp";
   localIp: string;
@@ -25,7 +34,9 @@ export interface ProxyFormData {
 }
 
 const DEFAULT_FORM: ProxyFormData = {
+  proxyBackend: "frp",
   serverId: "",
+  integrationId: "",
   name: "",
   type: "tcp",
   localIp: "127.0.0.1",
@@ -60,7 +71,9 @@ export function useProxyForm() {
 
   const [formData, setFormData] = useState<ProxyFormData>(DEFAULT_FORM);
   const [servers, setServers] = useState<ServerOption[]>([]);
+  const [integrations, setIntegrations] = useState<IntegrationOption[]>([]);
   const [loadingServers, setLoadingServers] = useState(false);
+  const [loadingIntegrations, setLoadingIntegrations] = useState(false);
   const [loadingProxy, setLoadingProxy] = useState(isEditing);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof ProxyFormData, string>>>({});
@@ -87,6 +100,24 @@ export function useProxyForm() {
   }, [isEditing]);
 
   useEffect(() => {
+    const fetchIntegrations = async () => {
+      try {
+        setLoadingIntegrations(true);
+        const result = await pb.collection("fh_integrations").getFullList<IntegrationOption>({
+          sort: "name",
+          fields: "id,name,integrationsType,status",
+        });
+        setIntegrations(result);
+      } catch (err) {
+        console.error("Failed to fetch integrations:", err);
+      } finally {
+        setLoadingIntegrations(false);
+      }
+    };
+    fetchIntegrations();
+  }, []);
+
+  useEffect(() => {
     if (!id) return;
     const fetchProxy = async () => {
       try {
@@ -94,7 +125,9 @@ export function useProxyForm() {
         const record = await pb.collection("fh_proxies").getOne(id);
         const plugin = record.plugin as Record<string, string> | null | undefined;
         setFormData({
-          serverId: record.serverId as string,
+          proxyBackend: (record.type as ProxyFormData["proxyBackend"]) || "frp",
+          serverId: (record.serverId as string) || "",
+          integrationId: (record.integrationId as string) || "",
           name: (record.name as string) || "",
           type: record.proxyType as ProxyFormData["type"],
           localIp: (record.localIP as string) || "127.0.0.1",
@@ -154,29 +187,42 @@ export function useProxyForm() {
   };
 
   const validate = (data: ProxyFormData): boolean => {
+    const isCloudflare = data.proxyBackend === "cloudflare";
     const isHttp = data.type === "http" || data.type === "https";
     const isSocks5 = data.pluginEnabled && data.pluginType === "socks5";
     const newErrors: Partial<Record<keyof ProxyFormData, string>> = {};
 
-    if (!data.serverId) newErrors.serverId = t("proxy.errorRequired");
     if (!data.name) newErrors.name = t("proxy.errorRequired");
     else if (!REGEX.PROXY_NAME.test(data.name)) newErrors.name = t("proxy.errorInvalidName");
 
-    if (!isSocks5) {
+    if (isCloudflare) {
+      if (!data.integrationId) newErrors.integrationId = t("proxy.errorRequired");
       if (!data.localIp) newErrors.localIp = t("proxy.errorRequired");
       else if (!REGEX.IP_OR_HOSTNAME.test(data.localIp)) newErrors.localIp = t("proxy.errorInvalidIP");
-
       if (!data.localPort) newErrors.localPort = t("proxy.errorRequired");
       else if (!REGEX.PORT.test(data.localPort)) newErrors.localPort = t("proxy.errorInvalidPort");
-    }
+      if (data.customDomains.length === 0 || data.customDomains.every((d) => !d.trim())) {
+        newErrors.customDomains = t("proxy.errorHostnameRequired");
+      }
+    } else {
+      if (!data.serverId) newErrors.serverId = t("proxy.errorRequired");
 
-    if (!isHttp && !isSocks5) {
-      if (!data.remotePort) newErrors.remotePort = t("proxy.errorRequired");
-      else if (!REGEX.PORT.test(data.remotePort)) newErrors.remotePort = t("proxy.errorInvalidPort");
-    }
+      if (!isSocks5) {
+        if (!data.localIp) newErrors.localIp = t("proxy.errorRequired");
+        else if (!REGEX.IP_OR_HOSTNAME.test(data.localIp)) newErrors.localIp = t("proxy.errorInvalidIP");
 
-    if (isHttp && !data.subdomain && data.customDomains.length === 0) {
-      newErrors.subdomain = t("proxy.errorSubdomainRequired");
+        if (!data.localPort) newErrors.localPort = t("proxy.errorRequired");
+        else if (!REGEX.PORT.test(data.localPort)) newErrors.localPort = t("proxy.errorInvalidPort");
+      }
+
+      if (!isHttp && !isSocks5) {
+        if (!data.remotePort) newErrors.remotePort = t("proxy.errorRequired");
+        else if (!REGEX.PORT.test(data.remotePort)) newErrors.remotePort = t("proxy.errorInvalidPort");
+      }
+
+      if (isHttp && !data.subdomain && data.customDomains.length === 0) {
+        newErrors.subdomain = t("proxy.errorSubdomainRequired");
+      }
     }
 
     setErrors(newErrors);
@@ -194,20 +240,24 @@ export function useProxyForm() {
       }
       : null;
 
+    const isCloudflare = formData.proxyBackend === "cloudflare";
+
     const payload = {
-      serverId: formData.serverId,
+      type: formData.proxyBackend,
+      serverId: isCloudflare ? "" : formData.serverId,
+      integrationId: isCloudflare ? formData.integrationId : "",
       proxyType: formData.type,
       name: formData.name,
-      localIP: formData.localIp,
-      localPort: formData.localPort,
-      remotePort: formData.remotePort,
+      localIP: isCloudflare ? "" : formData.localIp,
+      localPort: isCloudflare ? "" : formData.localPort,
+      remotePort: isCloudflare ? "" : formData.remotePort,
       subdomain: formData.subdomain,
       customDomains: formData.customDomains,
-      transport: {
+      transport: isCloudflare ? null : {
         use_encryption: formData.encryption,
         use_compression: formData.compression,
       },
-      plugin,
+      plugin: isCloudflare ? null : plugin,
       description: formData.description,
       status: "enabled",
     };
@@ -231,17 +281,21 @@ export function useProxyForm() {
 
   const isHttpType = formData.type === "http" || formData.type === "https";
   const isSocks5Plugin = formData.pluginEnabled && formData.pluginType === "socks5";
+  const isCloudflare = formData.proxyBackend === "cloudflare";
 
   return {
     isEditing,
     formData,
     servers,
+    integrations,
     loadingServers,
+    loadingIntegrations,
     loadingProxy,
     submitting,
     errors,
     isHttpType,
     isSocks5Plugin,
+    isCloudflare,
     handleChange,
     handleSubmit,
     navigate,

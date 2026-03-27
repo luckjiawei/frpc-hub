@@ -32,6 +32,12 @@ const ServerFormPage = lazy(() =>
 const ServerLogPage = lazy(() =>
   import("./pages/ServerLog/ServerLogPage").then((m) => ({ default: m.ServerLogPage }))
 );
+const IntegrationsPage = lazy(() =>
+  import("./pages/Integrations").then((m) => ({ default: m.IntegrationsPage }))
+);
+const IntegrationFormPage = lazy(() =>
+  import("./pages/Integrations/IntegrationFormPage").then((m) => ({ default: m.IntegrationFormPage }))
+);
 
 function AuthenticatedLayout() {
   console.log("AuthenticatedLayout rendered");
@@ -77,6 +83,9 @@ function App() {
             <Route path="/servers/:id/logs" element={<ServerLogPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/import" element={<ImportPage />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
+            <Route path="/integrations/new" element={<IntegrationFormPage />} />
+            <Route path="/integrations/:id/edit" element={<IntegrationFormPage />} />
             {/* <Route path="/versions" element={<VersionPage />} /> */}
           </Route>
 

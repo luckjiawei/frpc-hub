@@ -5,7 +5,9 @@ import { toast } from "sonner";
 
 export interface Proxy {
   id: string;
+  type: "frp" | "cloudflare";
   serverId: string;
+  integrationId?: string;
   proxyType: "tcp" | "udp" | "http" | "https";
   name?: string;
   localIP?: string;

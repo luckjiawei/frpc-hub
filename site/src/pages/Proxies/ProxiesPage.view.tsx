@@ -213,7 +213,14 @@ export function ProxiesView({
                           <Text weight="medium">{proxy.name || <Text color="gray">-</Text>}</Text>
                         </Table.Cell>
                         <Table.Cell>
-                          <Badge variant="surface">{proxy.proxyType.toUpperCase()}</Badge>
+                          {proxy.type === "cloudflare" ? (
+                            <Badge variant="surface" color="orange">
+                              <Icon icon="simple-icons:cloudflare" width="10" height="10" />
+                              Cloudflare
+                            </Badge>
+                          ) : (
+                            <Badge variant="surface">{proxy.proxyType?.toUpperCase() ?? "FRP"}</Badge>
+                          )}
                         </Table.Cell>
                         <Table.Cell>
                           {(proxy as { expand?: { serverId?: { serverName?: string } } }).expand?.serverId ? (

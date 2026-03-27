@@ -16,17 +16,21 @@ export function ProxyFormPage() {
       isEditing={form.isEditing}
       formData={form.formData}
       servers={form.servers}
+      integrations={form.integrations}
       loadingServers={form.loadingServers}
+      loadingIntegrations={form.loadingIntegrations}
       loadingProxy={form.loadingProxy}
       submitting={form.submitting}
       errors={form.errors}
       isHttpType={form.isHttpType}
       isSocks5Plugin={form.isSocks5Plugin}
+      isCloudflare={form.isCloudflare}
       mounted={mounted}
       onChange={form.handleChange}
       onSubmit={form.handleSubmit}
       onCancel={() => form.navigate("/proxies")}
       onNavigateToServers={() => form.navigate("/servers")}
+      onNavigateToIntegrations={() => form.navigate("/integrations")}
     />
   );
 }

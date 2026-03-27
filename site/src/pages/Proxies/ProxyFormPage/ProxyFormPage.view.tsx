@@ -21,7 +21,12 @@ import { PageHeader } from "../../../components/PageHeader";
 import { SectionHeading } from "../../../components/SectionHeading";
 import { RadioCardGroup } from "../../../components/RadioCardGroup";
 import { ServerLatency } from "../../../components/ServerLatency";
-import { type ProxyFormData, type ServerOption } from "./useProxyForm";
+import { type ProxyFormData, type ServerOption, type IntegrationOption } from "./useProxyForm";
+
+const backendOptions = [
+  { value: "frp",        label: "FRP",        icon: "lucide:server",      comingSoon: false },
+  { value: "cloudflare", label: "Cloudflare", icon: "simple-icons:cloudflare", comingSoon: false },
+];
 
 const proxyTypes = [
   { value: "tcp",    label: "TCP",    icon: "lucide:arrow-right-left", comingSoon: false },
@@ -51,34 +56,42 @@ interface ProxyFormPageViewProps {
   isEditing: boolean;
   formData: ProxyFormData;
   servers: ServerOption[];
+  integrations: IntegrationOption[];
   loadingServers: boolean;
+  loadingIntegrations: boolean;
   loadingProxy: boolean;
   submitting: boolean;
   errors: Partial<Record<keyof ProxyFormData, string>>;
   isHttpType: boolean;
   isSocks5Plugin: boolean;
+  isCloudflare: boolean;
   mounted: boolean;
   onChange: (field: keyof ProxyFormData, value: string | boolean | string[]) => void;
   onSubmit: () => void;
   onCancel: () => void;
   onNavigateToServers: () => void;
+  onNavigateToIntegrations: () => void;
 }
 
 export function ProxyFormPageView({
   isEditing,
   formData,
   servers,
+  integrations,
   loadingServers,
+  loadingIntegrations,
   loadingProxy,
   submitting,
   errors,
   isHttpType,
   isSocks5Plugin,
+  isCloudflare,
   mounted,
   onChange,
   onSubmit,
   onCancel,
   onNavigateToServers,
+  onNavigateToIntegrations,
 }: ProxyFormPageViewProps) {
   const { t } = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -115,61 +128,143 @@ export function ProxyFormPageView({
               <section>
                 <SectionHeading id="section-basic" title={t("proxy.sectionBasic")} icon="lucide:info" />
                 <Flex direction="column" gap="4">
-                  <FormItem label={t("proxy.selectServer")} required>
-                    <Select.Root
-                      value={formData.serverId}
-                      onValueChange={(v) => onChange("serverId", v)}
-                      disabled={loadingServers || servers.length === 0}
-                    >
-                      <Select.Trigger
-                        placeholder={
-                          loadingServers
-                            ? t("common.loading")
-                            : servers.length === 0
-                              ? t("proxy.noServersAvailable")
-                              : t("proxy.selectServerPlaceholder")
-                        }
-                        style={{ width: "100%" }}
-                      />
-                      <Select.Content>
-                        {servers.map((s) => (
-                          <Select.Item key={s.id} value={s.id}>
-                            <Flex align="center" gap="2">
-                              <span
-                                className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
-                                  s.bootStatus === "running" ? "bg-[var(--green-9)]" : "bg-[var(--gray-7)]"
-                                }`}
-                              />
-                              <Text size="2">{s.serverName}</Text>
-                              <ServerLatency networkStatus={s.networkStatus} size="1" />
-                            </Flex>
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Root>
-                    {servers.length === 0 && !loadingServers && (
-                      <Callout.Root size="1" color="orange" mt="2">
-                        <Callout.Icon>
-                          <Icon icon="lucide:triangle-alert" width="14" height="14" />
-                        </Callout.Icon>
-                        <Callout.Text>
-                          <Flex align="center" justify="between" gap="2">
-                            <Text size="1">{t("proxy.noServersAvailable")}</Text>
-                            <Button
-                              size="1"
-                              variant="ghost"
-                              color="orange"
-                              className="cursor-pointer shrink-0"
-                              onClick={onNavigateToServers}
-                            >
-                              {t("proxy.goAddServer")}
-                              <Icon icon="lucide:arrow-right" width="12" height="12" />
-                            </Button>
-                          </Flex>
-                        </Callout.Text>
-                      </Callout.Root>
-                    )}
+                  <FormItem label={t("proxy.proxyBackend")} required>
+                    <RadioCardGroup
+                      options={backendOptions}
+                      value={formData.proxyBackend}
+                      onChange={(v) => onChange("proxyBackend", v as ProxyFormData["proxyBackend"])}
+                      comingSoonLabel={t("common.comingSoon")}
+                    />
                   </FormItem>
+
+                  <AnimatePresence mode="wait">
+                    {isCloudflare ? (
+                      <motion.div
+                        key="integration-selector"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <FormItem label={t("proxy.selectIntegration")} required error={errors.integrationId}>
+                          <Select.Root
+                            value={formData.integrationId}
+                            onValueChange={(v) => onChange("integrationId", v)}
+                            disabled={loadingIntegrations || integrations.length === 0}
+                          >
+                            <Select.Trigger
+                              placeholder={
+                                loadingIntegrations
+                                  ? t("common.loading")
+                                  : integrations.length === 0
+                                    ? t("proxy.noIntegrationsAvailable")
+                                    : t("proxy.selectIntegrationPlaceholder")
+                              }
+                              style={{ width: "100%" }}
+                            />
+                            <Select.Content>
+                              {integrations.map((i) => (
+                                <Select.Item key={i.id} value={i.id}>
+                                  <Flex align="center" gap="2">
+                                    <Icon icon="lucide:plug" width="12" height="12" />
+                                    <Text size="2">{i.name}</Text>
+                                  </Flex>
+                                </Select.Item>
+                              ))}
+                            </Select.Content>
+                          </Select.Root>
+                          {integrations.length === 0 && !loadingIntegrations && (
+                            <Callout.Root size="1" color="orange" mt="2">
+                              <Callout.Icon>
+                                <Icon icon="lucide:triangle-alert" width="14" height="14" />
+                              </Callout.Icon>
+                              <Callout.Text>
+                                <Flex align="center" justify="between" gap="2">
+                                  <Text size="1">{t("proxy.noIntegrationsAvailable")}</Text>
+                                  <Button
+                                    size="1"
+                                    variant="ghost"
+                                    color="orange"
+                                    className="cursor-pointer shrink-0"
+                                    onClick={onNavigateToIntegrations}
+                                  >
+                                    {t("proxy.goAddIntegration")}
+                                    <Icon icon="lucide:arrow-right" width="12" height="12" />
+                                  </Button>
+                                </Flex>
+                              </Callout.Text>
+                            </Callout.Root>
+                          )}
+                        </FormItem>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="server-selector"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <FormItem label={t("proxy.selectServer")} required error={errors.serverId}>
+                          <Select.Root
+                            value={formData.serverId}
+                            onValueChange={(v) => onChange("serverId", v)}
+                            disabled={loadingServers || servers.length === 0}
+                          >
+                            <Select.Trigger
+                              placeholder={
+                                loadingServers
+                                  ? t("common.loading")
+                                  : servers.length === 0
+                                    ? t("proxy.noServersAvailable")
+                                    : t("proxy.selectServerPlaceholder")
+                              }
+                              style={{ width: "100%" }}
+                            />
+                            <Select.Content>
+                              {servers.map((s) => (
+                                <Select.Item key={s.id} value={s.id}>
+                                  <Flex align="center" gap="2">
+                                    <span
+                                      className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+                                        s.bootStatus === "running" ? "bg-[var(--green-9)]" : "bg-[var(--gray-7)]"
+                                      }`}
+                                    />
+                                    <Text size="2">{s.serverName}</Text>
+                                    <ServerLatency networkStatus={s.networkStatus} size="1" />
+                                  </Flex>
+                                </Select.Item>
+                              ))}
+                            </Select.Content>
+                          </Select.Root>
+                          {servers.length === 0 && !loadingServers && (
+                            <Callout.Root size="1" color="orange" mt="2">
+                              <Callout.Icon>
+                                <Icon icon="lucide:triangle-alert" width="14" height="14" />
+                              </Callout.Icon>
+                              <Callout.Text>
+                                <Flex align="center" justify="between" gap="2">
+                                  <Text size="1">{t("proxy.noServersAvailable")}</Text>
+                                  <Button
+                                    size="1"
+                                    variant="ghost"
+                                    color="orange"
+                                    className="cursor-pointer shrink-0"
+                                    onClick={onNavigateToServers}
+                                  >
+                                    {t("proxy.goAddServer")}
+                                    <Icon icon="lucide:arrow-right" width="12" height="12" />
+                                  </Button>
+                                </Flex>
+                              </Callout.Text>
+                            </Callout.Root>
+                          )}
+                        </FormItem>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   <FormItem label={t("proxy.proxyName")} required error={errors.name}>
                     <TextField.Root
@@ -181,14 +276,16 @@ export function ProxyFormPageView({
                     />
                   </FormItem>
 
-                  <FormItem label={t("proxy.proxyType")} required>
-                    <RadioCardGroup
-                      options={proxyTypes}
-                      value={formData.type}
-                      onChange={(v) => onChange("type", v as ProxyFormData["type"])}
-                      comingSoonLabel={t("common.comingSoon")}
-                    />
-                  </FormItem>
+                  {!isCloudflare && (
+                    <FormItem label={t("proxy.proxyType")} required>
+                      <RadioCardGroup
+                        options={proxyTypes}
+                        value={formData.type}
+                        onChange={(v) => onChange("type", v as ProxyFormData["type"])}
+                        comingSoonLabel={t("common.comingSoon")}
+                      />
+                    </FormItem>
+                  )}
                 </Flex>
               </section>
 
@@ -198,55 +295,43 @@ export function ProxyFormPageView({
               <section>
                 <SectionHeading id="section-network" title={t("proxy.sectionNetwork")} icon="lucide:network" />
                 <Flex direction="column" gap="4">
-                  <AnimatePresence>
-                    {!isSocks5Plugin && (
-                      <motion.div
-                        key="local-addr"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        style={{ overflow: "hidden" }}
-                      >
-                        <Flex gap="3">
-                          <Box className="flex-[2]">
-                            <FormItem label={t("proxy.localAddress")} required error={errors.localIp}>
-                              <TextField.Root
-                                size="2"
-                                placeholder={t("proxy.localAddressPlaceholder")}
-                                value={formData.localIp}
-                                onChange={(e) => onChange("localIp", e.target.value)}
-                                color={errors.localIp ? "red" : undefined}
-                              />
-                            </FormItem>
-                          </Box>
-                          <Box className="flex-1">
-                            <FormItem label={t("proxy.localPort")} required error={errors.localPort}>
-                              <TextField.Root
-                                size="2"
-                                placeholder={t("proxy.localPortPlaceholder")}
-                                type="number"
-                                value={formData.localPort}
-                                onChange={(e) => onChange("localPort", e.target.value)}
-                                color={errors.localPort ? "red" : undefined}
-                              />
-                            </FormItem>
-                          </Box>
-                        </Flex>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {isHttpType ? (
+                  {isCloudflare ? (
                     <>
-                      <FormItem label={t("proxy.customDomainsLabel")}>
+                      {/* Cloudflare: local service + public hostnames */}
+                      <Flex gap="3">
+                        <Box className="flex-[2]">
+                          <FormItem label={t("proxy.localAddress")} required error={errors.localIp}>
+                            <TextField.Root
+                              size="2"
+                              placeholder={t("proxy.localAddressPlaceholder")}
+                              value={formData.localIp}
+                              onChange={(e) => onChange("localIp", e.target.value)}
+                              color={errors.localIp ? "red" : undefined}
+                            />
+                          </FormItem>
+                        </Box>
+                        <Box className="flex-1">
+                          <FormItem label={t("proxy.localPort")} required error={errors.localPort}>
+                            <TextField.Root
+                              size="2"
+                              placeholder={t("proxy.localPortPlaceholder")}
+                              type="number"
+                              value={formData.localPort}
+                              onChange={(e) => onChange("localPort", e.target.value)}
+                              color={errors.localPort ? "red" : undefined}
+                            />
+                          </FormItem>
+                        </Box>
+                      </Flex>
+
+                      <FormItem label={t("proxy.publicHostnames")} required error={errors.customDomains}>
                         <Flex direction="column" gap="2">
                           {formData.customDomains.map((domain, index) => (
                             <Flex key={index} gap="2" align="center">
                               <TextField.Root
                                 size="2"
                                 style={{ flex: 1 }}
-                                placeholder={`example.com`}
+                                placeholder="app.example.com"
                                 value={domain}
                                 onChange={(e) => {
                                   const next = [...formData.customDomains];
@@ -275,44 +360,134 @@ export function ProxyFormPageView({
                             onClick={() => onChange("customDomains", [...formData.customDomains, ""])}
                           >
                             <Icon icon="lucide:plus" />
-                            {t("proxy.addCustomDomain")}
+                            {t("proxy.addHostname")}
                           </Button>
                         </Flex>
-                      </FormItem>
-                      <FormItem label={t("proxy.subdomain")}>
-                        <TextField.Root
-                          size="2"
-                          placeholder={t("proxy.subdomainPlaceholder")}
-                          value={formData.subdomain}
-                          onChange={(e) => onChange("subdomain", e.target.value)}
-                        />
                         <Text size="1" color="gray" mt="1">
-                          {t("proxy.subdomainDesc")}
+                          {t("proxy.publicHostnamesDesc")}
                         </Text>
                       </FormItem>
                     </>
                   ) : (
-                    <FormItem label={t("proxy.remotePortLabel")} required error={errors.remotePort}>
-                      <TextField.Root
-                        size="2"
-                        placeholder={t("proxy.remotePortPlaceholder")}
-                        type="number"
-                        value={formData.remotePort}
-                        onChange={(e) => onChange("remotePort", e.target.value)}
-                        color={errors.remotePort ? "red" : undefined}
-                      />
-                      <Text size="1" color="gray" mt="1">
-                        {t("proxy.remotePortDesc")}
-                      </Text>
-                    </FormItem>
+                    <>
+                      {/* FRP: local addr + remote port or domain */}
+                      <AnimatePresence>
+                        {!isSocks5Plugin && (
+                          <motion.div
+                            key="local-addr"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                          >
+                            <Flex gap="3">
+                              <Box className="flex-[2]">
+                                <FormItem label={t("proxy.localAddress")} required error={errors.localIp}>
+                                  <TextField.Root
+                                    size="2"
+                                    placeholder={t("proxy.localAddressPlaceholder")}
+                                    value={formData.localIp}
+                                    onChange={(e) => onChange("localIp", e.target.value)}
+                                    color={errors.localIp ? "red" : undefined}
+                                  />
+                                </FormItem>
+                              </Box>
+                              <Box className="flex-1">
+                                <FormItem label={t("proxy.localPort")} required error={errors.localPort}>
+                                  <TextField.Root
+                                    size="2"
+                                    placeholder={t("proxy.localPortPlaceholder")}
+                                    type="number"
+                                    value={formData.localPort}
+                                    onChange={(e) => onChange("localPort", e.target.value)}
+                                    color={errors.localPort ? "red" : undefined}
+                                  />
+                                </FormItem>
+                              </Box>
+                            </Flex>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {isHttpType ? (
+                        <>
+                          <FormItem label={t("proxy.customDomainsLabel")}>
+                            <Flex direction="column" gap="2">
+                              {formData.customDomains.map((domain, index) => (
+                                <Flex key={index} gap="2" align="center">
+                                  <TextField.Root
+                                    size="2"
+                                    style={{ flex: 1 }}
+                                    placeholder="example.com"
+                                    value={domain}
+                                    onChange={(e) => {
+                                      const next = [...formData.customDomains];
+                                      next[index] = e.target.value;
+                                      onChange("customDomains", next);
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="2"
+                                    variant="soft"
+                                    color="red"
+                                    onClick={() => {
+                                      const next = formData.customDomains.filter((_, i) => i !== index);
+                                      onChange("customDomains", next);
+                                    }}
+                                  >
+                                    <Icon icon="lucide:x" />
+                                  </Button>
+                                </Flex>
+                              ))}
+                              <Button
+                                type="button"
+                                size="2"
+                                variant="soft"
+                                onClick={() => onChange("customDomains", [...formData.customDomains, ""])}
+                              >
+                                <Icon icon="lucide:plus" />
+                                {t("proxy.addCustomDomain")}
+                              </Button>
+                            </Flex>
+                          </FormItem>
+                          <FormItem label={t("proxy.subdomain")}>
+                            <TextField.Root
+                              size="2"
+                              placeholder={t("proxy.subdomainPlaceholder")}
+                              value={formData.subdomain}
+                              onChange={(e) => onChange("subdomain", e.target.value)}
+                            />
+                            <Text size="1" color="gray" mt="1">
+                              {t("proxy.subdomainDesc")}
+                            </Text>
+                          </FormItem>
+                        </>
+                      ) : (
+                        <FormItem label={t("proxy.remotePortLabel")} required error={errors.remotePort}>
+                          <TextField.Root
+                            size="2"
+                            placeholder={t("proxy.remotePortPlaceholder")}
+                            type="number"
+                            value={formData.remotePort}
+                            onChange={(e) => onChange("remotePort", e.target.value)}
+                            color={errors.remotePort ? "red" : undefined}
+                          />
+                          <Text size="1" color="gray" mt="1">
+                            {t("proxy.remotePortDesc")}
+                          </Text>
+                        </FormItem>
+                      )}
+                    </>
                   )}
                 </Flex>
               </section>
 
-              <Separator size="4" />
+              {!isCloudflare && <Separator size="4" />}
 
               {/* 传输选项 */}
-              <section>
+              {!isCloudflare && <section>
                 <SectionHeading id="section-transport" title={t("proxy.sectionTransport")} icon="lucide:shield" />
                 <Flex direction="column" gap="3">
                   <Flex justify="between" align="center">
@@ -339,12 +514,12 @@ export function ProxyFormPageView({
                     />
                   </Flex>
                 </Flex>
-              </section>
+              </section>}
 
-              <Separator size="4" />
+              {!isCloudflare && <Separator size="4" />}
 
               {/* 插件 */}
-              <section>
+              {!isCloudflare && <section>
                 <SectionHeading id="section-plugin" title={t("proxy.sectionPlugin")} icon="lucide:puzzle" />
                 <Flex direction="column" gap="4">
                   <Flex justify="between" align="center">
@@ -414,7 +589,7 @@ export function ProxyFormPageView({
                   )}
                   </AnimatePresence>
                 </Flex>
-              </section>
+              </section>}
 
               <Separator size="4" />
 
