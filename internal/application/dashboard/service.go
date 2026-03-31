@@ -4,9 +4,10 @@ import (
 	proxyapp "podux/internal/application/proxy"
 	serverapp "podux/internal/application/server"
 	proxydomain "podux/internal/domain/proxy"
-	serverdomain "podux/internal/domain/server"
+	tunneldomain "podux/internal/domain/tunnel"
 	"time"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -22,10 +23,10 @@ type DashboardStats struct {
 }
 
 type TopologyServerItem struct {
-	ID         string `json:"id" db:"id"`
-	ServerName string `json:"serverName" db:"serverName"`
-	ServerAddr string `json:"serverAddr" db:"serverAddr"`
-	BootStatus string `json:"bootStatus" db:"bootStatus"`
+	ID           string `json:"id" db:"id"`
+	ServerName   string `json:"serverName" db:"serverName"`
+	ServerAddr   string `json:"serverAddr" db:"serverAddr"`
+	TunnelStatus string `json:"bootStatus" db:"tunnelStatus"`
 }
 
 type TopologyProxyItem struct {
@@ -49,28 +50,29 @@ type Service struct {
 	app           core.App
 	serverService *serverapp.Service
 	proxyService  *proxyapp.Service
+	tunnelRepo    tunneldomain.Repository
 	startTime     time.Time
 }
 
-func NewService(app core.App, serverService *serverapp.Service, proxyService *proxyapp.Service) *Service {
+func NewService(app core.App, serverService *serverapp.Service, proxyService *proxyapp.Service, tunnelRepo tunneldomain.Repository) *Service {
 	return &Service{
 		app:           app,
 		serverService: serverService,
 		proxyService:  proxyService,
+		tunnelRepo:    tunnelRepo,
 		startTime:     time.Now(),
 	}
 }
 
 func (s *Service) GetStats() (*DashboardStats, error) {
-	runningCount, err := s.serverService.GetServerCountByStatus(serverdomain.ServerStatusRunning)
-	if err != nil {
-		return nil, err
-	}
-
-	stoppedCount, err := s.serverService.GetServerCountByStatus(serverdomain.ServerStatusStopped)
-	if err != nil {
-		return nil, err
-	}
+	// Running/stopped server counts derived from FRP tunnel statuses.
+	var runningCount, stoppedCount int64
+	s.app.DB().Select("COUNT(*)").From("th_tunnels").
+		Where(dbx.And(dbx.HashExp{"type": "frp"}, dbx.HashExp{"status": string(tunneldomain.TunnelStatusActive)})).
+		Row(&runningCount)
+	s.app.DB().Select("COUNT(*)").From("th_tunnels").
+		Where(dbx.And(dbx.HashExp{"type": "frp"}, dbx.HashExp{"status": string(tunneldomain.TunnelStatusInactive)})).
+		Row(&stoppedCount)
 
 	proxiesEnabledCount, err := s.proxyService.GetProxyCountByStatus(proxydomain.ProxyStatusEnabled)
 	if err != nil {
@@ -110,16 +112,27 @@ func (s *Service) GetStats() (*DashboardStats, error) {
 }
 
 func (s *Service) GetTopology() (*TopologyData, error) {
+	// Servers: join with th_tunnels (type=frp) to get running status.
 	var servers []TopologyServerItem
-	if err := s.app.DB().Select("id", "serverName", "serverAddr", "bootStatus").From("fh_servers").All(&servers); err != nil {
+	err := s.app.DB().
+		Select("fs.id", "fs.serverName", "fs.serverAddr",
+			"COALESCE(tt.status, 'inactive') as tunnelStatus").
+		From("fh_servers fs").
+		LeftJoin("th_tunnels tt", dbx.NewExp("tt.serverId = fs.id AND tt.serverId IS NOT NULL AND tt.serverId != ''")).
+		All(&servers)
+	if err != nil {
 		return nil, err
 	}
 	if servers == nil {
 		servers = []TopologyServerItem{}
 	}
 
+	// Proxies: bootStatus still comes from fh_proxies directly.
 	var proxies []TopologyProxyItem
-	if err := s.app.DB().Select("id", "name", "proxyType", "localIP", "localPort", "remotePort", "status", "bootStatus", "serverId").From("fh_proxies").All(&proxies); err != nil {
+	if err := s.app.DB().
+		Select("id", "name", "proxyType", "localIP", "localPort", "remotePort", "status", "bootStatus", "serverId").
+		From("fh_proxies").
+		All(&proxies); err != nil {
 		return nil, err
 	}
 	if proxies == nil {

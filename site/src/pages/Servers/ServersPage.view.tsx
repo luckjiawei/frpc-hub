@@ -56,9 +56,9 @@ export function ServersView({
   const navigate = useNavigate();
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "running":
+      case "active":
         return "green";
-      case "stopped":
+      case "inactive":
         return "red";
       default:
         return "gray";
@@ -107,7 +107,7 @@ export function ServersView({
               value={
                 <span className="text-[#30A46C]">
                   <AnimateNumber
-                    value={servers.filter((s) => s.bootStatus === "running").length}
+                    value={servers.filter((s) => s.bootStatus === "active").length}
                     decimalPlaces={0}
                   />
                 </span>
@@ -126,7 +126,7 @@ export function ServersView({
               value={
                 <span className="text-[#E5484D]">
                   <AnimateNumber
-                    value={servers.filter((s) => s.bootStatus === "stopped").length}
+                    value={servers.filter((s) => s.bootStatus === "inactive").length}
                     decimalPlaces={0}
                   />
                 </span>
@@ -314,25 +314,25 @@ export function ServersView({
                               radius="full"
                               color={getStatusColor(server.bootStatus)}
                               className={`animate-status-appear ${
-                                server.bootStatus === "running"
+                                server.bootStatus === "active"
                                   ? "animate-status-pulse"
-                                  : server.bootStatus === "stopped"
+                                  : server.bootStatus === "inactive"
                                     ? "animate-status-fade"
                                     : ""
                               }`}
                             >
                               <span
                                 className={`status-dot ${
-                                  server.bootStatus === "running"
+                                  server.bootStatus === "active"
                                     ? "status-dot-green"
-                                    : server.bootStatus === "stopped"
+                                    : server.bootStatus === "inactive"
                                       ? "status-dot-red"
                                       : "status-dot-gray"
                                 }`}
                               />
-                              {server.bootStatus === "running"
+                              {server.bootStatus === "active"
                                 ? t("server.running")
-                                : server.bootStatus === "stopped"
+                                : server.bootStatus === "inactive"
                                   ? t("server.stopped")
                                   : t("common.status")}
                             </Badge>
@@ -340,7 +340,7 @@ export function ServersView({
 
                           <Table.Cell>
                             <Flex gap="2">
-                              {server.bootStatus === "running" ? (
+                              {server.bootStatus === "active" ? (
                                 <Button
                                   size="1"
                                   variant="soft"

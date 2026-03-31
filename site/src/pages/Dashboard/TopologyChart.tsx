@@ -212,7 +212,7 @@ function VisitorNode({ data }: { data: Record<string, string> }) {
 // Server Node
 function ServerNode({ data }: { data: Record<string, string> }) {
   const p = data.isDark === "1" ? DARK : LIGHT;
-  const online = data.bootStatus === "running";
+  const online = data.bootStatus === "active";
   const accent = online ? C.online : C.eOff;
   const handleColor = online ? C.eOn : C.eOff;
   return (
@@ -404,7 +404,7 @@ export function TopologyChart({ topology }: TopologyChartProps) {
     });
 
     for (const { server, sProxies, startRow, rowCount } of serverRows) {
-      const serverOnline = server.bootStatus === "running";
+      const serverOnline = server.bootStatus === "active";
       const serverCY = (startRow + rowCount / 2) * ROW_H;
       const serverY = serverCY - SERVER_H / 2;
 

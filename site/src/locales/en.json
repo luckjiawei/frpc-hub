@@ -279,6 +279,7 @@
     "addFirstProxy": "Connect your local services to the world. Add your first proxy configuration to get started.",
     "createYourFirstProxy": "Create Your First Proxy",
     "server": "Server",
+    "tunnel": "Protocol",
     "bootStatus": "Boot Status",
     "manageProxies": "Manage your proxy configurations",
     "allProxies": "All Proxies",

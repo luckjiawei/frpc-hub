@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import pb from "../../../lib/pocketbase";
-import { apiGet } from "../../../lib/api";
+import { apiGet, apiPost } from "../../../lib/api";
 import { toast } from "sonner";
 import { REGEX } from "../../../lib/regex";
 
@@ -122,12 +122,14 @@ export function useProxyForm() {
     const fetchProxy = async () => {
       try {
         setLoadingProxy(true);
-        const record = await pb.collection("fh_proxies").getOne(id);
+        const record = await pb.collection("fh_proxies").getOne(id, { expand: "tunnelId" });
         const plugin = record.plugin as Record<string, string> | null | undefined;
+        const tunnel = (record as any).expand?.tunnelId as { type?: string; integrationId?: string; serverId?: string } | undefined;
+        const proxyBackend: ProxyFormData["proxyBackend"] = tunnel?.type === "cloudflare" ? "cloudflare" : "frp";
         setFormData({
-          proxyBackend: (record.type as ProxyFormData["proxyBackend"]) || "frp",
-          serverId: (record.serverId as string) || "",
-          integrationId: (record.integrationId as string) || "",
+          proxyBackend,
+          serverId: tunnel?.serverId || (record.serverId as string) || "",
+          integrationId: tunnel?.integrationId || "",
           name: (record.name as string) || "",
           type: record.proxyType as ProxyFormData["type"],
           localIp: (record.localIP as string) || "127.0.0.1",
@@ -242,28 +244,40 @@ export function useProxyForm() {
 
     const isCloudflare = formData.proxyBackend === "cloudflare";
 
-    const payload = {
-      type: formData.proxyBackend,
-      serverId: isCloudflare ? "" : formData.serverId,
-      integrationId: isCloudflare ? formData.integrationId : "",
-      proxyType: formData.type,
-      name: formData.name,
-      localIP: isCloudflare ? "" : formData.localIp,
-      localPort: isCloudflare ? "" : formData.localPort,
-      remotePort: isCloudflare ? "" : formData.remotePort,
-      subdomain: formData.subdomain,
-      customDomains: formData.customDomains,
-      transport: isCloudflare ? null : {
-        use_encryption: formData.encryption,
-        use_compression: formData.compression,
-      },
-      plugin: isCloudflare ? null : plugin,
-      description: formData.description,
-      status: "enabled",
-    };
-
     try {
       setSubmitting(true);
+
+      let tunnelId = "";
+      if (isCloudflare) {
+        const res = await apiPost("/api/integrations/ensure-tunnel", { integrationId: formData.integrationId });
+        if (!res.ok) throw new Error("Failed to resolve Cloudflare tunnel");
+        const data = await res.json();
+        tunnelId = data.tunnelId;
+      }
+
+      const payload: Record<string, unknown> = {
+        proxyType: formData.type,
+        name: formData.name,
+        localIP: formData.localIp,
+        localPort: formData.localPort,
+        customDomains: formData.customDomains,
+        subdomain: formData.subdomain,
+        description: formData.description,
+        status: "enabled",
+      };
+
+      if (isCloudflare) {
+        payload.tunnelId = tunnelId;
+        payload.remotePort = "";
+        payload.transport = null;
+        payload.plugin = null;
+      } else {
+        payload.serverId = formData.serverId;
+        payload.remotePort = formData.remotePort;
+        payload.transport = { use_encryption: formData.encryption, use_compression: formData.compression };
+        payload.plugin = plugin;
+      }
+
       if (isEditing) {
         await pb.collection("fh_proxies").update(id!, payload);
         toast.success("Proxy updated successfully");

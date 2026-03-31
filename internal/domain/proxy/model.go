@@ -5,6 +5,7 @@ import "podux/pkg/types"
 // Proxy represents a proxy configuration record.
 type Proxy struct {
 	Id            string                `db:"id" json:"id"`
+	// Deprecated: Use TunnelId instead. Resolve the server via fh_proxies.tunnelId → th_tunnels.serverId.
 	ServerId      string                `db:"serverId" json:"serverId"`
 	ProxyType     string                `db:"proxyType" json:"proxyType"`
 	Name          string                `db:"name" json:"name"`

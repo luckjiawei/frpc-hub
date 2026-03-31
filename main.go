@@ -2,18 +2,22 @@ package main
 
 import (
 	"embed"
-	"github.com/spf13/cobra"
 	"io/fs"
 	"log"
 
+	"github.com/spf13/cobra"
+
 	"podux/internal/application/dashboard"
-	"podux/internal/application/frpc"
 	"podux/internal/application/importer"
+	"podux/internal/application/integration"
 	"podux/internal/application/monitoring"
 	"podux/internal/application/proxy"
 	"podux/internal/application/server"
 	"podux/internal/application/system"
+	cftunnel "podux/internal/application/tunnel/cloudflare"
+	frptunnel "podux/internal/application/tunnel/frp"
 	"podux/internal/application/version"
+	"podux/internal/hooks"
 	"podux/internal/infrastructure/persistence"
 	httphandler "podux/internal/interfaces/http"
 	_ "podux/migrations"
@@ -38,12 +42,13 @@ func main() {
 	// Infrastructure (Repository implementations)
 	serverRepo := persistence.NewServerRepository(app)
 	proxyRepo := persistence.NewProxyRepository(app)
+	tunnelRepo := persistence.NewTunnelRepository(app)
 
 	// Application Services
 	serverService := server.NewService(app, serverRepo)
 	proxyService := proxy.NewService(app, proxyRepo)
-	frpcService := frpc.NewService(app, serverRepo, proxyRepo)
-	dashboardService := dashboard.NewService(app, serverService, proxyService)
+	frpcService := frptunnel.NewProvider(app, serverRepo, proxyRepo, tunnelRepo)
+	dashboardService := dashboard.NewService(app, serverService, proxyService, tunnelRepo)
 	settingsService := system.NewService(app)
 	geoService := monitoring.NewGeoService(app)
 	metricsService := monitoring.NewMetricsService(app)
@@ -53,39 +58,33 @@ func main() {
 	versionService := version.NewService(app)
 	//githubService := github.NewService(app)
 
+	cloudflareService := integration.NewCloudflareService(app)
+	cloudflareProvider := cftunnel.NewProvider(app, proxyRepo, tunnelRepo)
+
 	// HTTP Handlers
 	//githubHandler := httphandler.NewGithubHandler(app, githubService)
-	frpcHandler := httphandler.NewFrpcHandler(app, frpcService)
+	integrationHandler := httphandler.NewIntegrationHandler(app)
+	frpcHandler := httphandler.NewTunnelHandler(app, frpcService, "/api/frpc")
+	cloudflareHandler := httphandler.NewTunnelHandler(app, cloudflareProvider, "/api/cloudflare")
 	versionHandler := httphandler.NewVersionHandler(app, versionService)
 	dashboardHandler := httphandler.NewDashboardHandler(dashboardService)
 	systemHandler := httphandler.NewSystemHandler(app, settingsService)
 	importHandler := httphandler.NewImportHandler(app, importService)
 	serverHandler := httphandler.NewServerHandler(app, metricsService)
 
-	// Hook: Reload frpc when proxy is updated
-	app.OnRecordAfterUpdateSuccess("fh_proxies").BindFunc(func(e *core.RecordEvent) error {
-		serverId := e.Record.GetString("serverId")
-		if serverId != "" {
-			// Check if the server is currently running
-			if frpcService.IsServerRunning(serverId) {
-				app.Logger().Info("Proxy updated, reloading frpc configuration", "proxyId", e.Record.Id, "serverId", serverId)
-				if err := frpcService.ReloadFrpc(&serverId); err != nil {
-					app.Logger().Error("Failed to reload frpc after proxy update", "error", err, "serverId", serverId)
-				}
-			}
-		}
-		return e.Next()
-	})
+	// Register all record hooks
+	hooks.Register(app, cloudflareService, frpcService)
 
 	// register custom routes
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		// Reset all server statuses to stopped on startup
-		serverService.ResetAllServerStatus()
+		// Reset all tunnel statuses to inactive on startup
+		tunnelRepo.ResetAllStatus()
 		// Reset all proxy statuses to offline on startup
 		proxyService.ResetAllProxyBootStatus()
 
-		// Auto-start servers with autoConnection enabled (non-blocking)
-		go frpcService.AutoStartServers()
+		// Auto-start tunnels (non-blocking)
+		go frpcService.AutoStart()
+		go cloudflareProvider.AutoStart()
 
 		// Start network monitoring service using intervals from settings
 		latencyInterval, geoInterval := settingsService.GetMonitoringIntervals()
@@ -94,7 +93,9 @@ func main() {
 
 		// Register routes for each module
 		//githubHandler.RegisterHandlers(e)
+		integrationHandler.RegisterHandlers(e)
 		frpcHandler.RegisterHandlers(e)
+		cloudflareHandler.RegisterHandlers(e)
 		versionHandler.RegisterHandlers(e)
 		dashboardHandler.RegisterHandlers(e)
 		systemHandler.RegisterHandlers(e)

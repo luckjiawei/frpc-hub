@@ -279,6 +279,7 @@
     "addFirstProxy": "将您的本地服务连接到世界。添加您的第一个代理配置以开始使用。",
     "createYourFirstProxy": "创建您的第一个代理",
     "server": "服务器",
+    "tunnel": "协议",
     "bootStatus": "启动状态",
     "manageProxies": "管理您的代理配置",
     "allProxies": "所有代理",

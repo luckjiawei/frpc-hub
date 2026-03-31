@@ -208,7 +208,7 @@ export function useServerForm() {
         await pb.collection("fh_servers").update(id!, payload);
         toast.success("Server updated successfully");
       } else {
-        await pb.collection("fh_servers").create({ ...payload, bootStatus: "stopped" });
+        await pb.collection("fh_servers").create(payload);
         toast.success("Server created successfully");
       }
       navigate("/servers");

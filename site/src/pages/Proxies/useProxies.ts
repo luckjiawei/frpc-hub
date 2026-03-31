@@ -5,9 +5,9 @@ import { toast } from "sonner";
 
 export interface Proxy {
   id: string;
-  type: "frp" | "cloudflare";
+  tunnelId: string;
+  tunnelType: string; // sourced from th_tunnels.type (e.g. "frp", "cloudflare")
   serverId: string;
-  integrationId?: string;
   proxyType: "tcp" | "udp" | "http" | "https";
   name?: string;
   localIP?: string;
@@ -60,16 +60,20 @@ export function useProxies() {
           : "";
 
         const [result, onlineResult] = await Promise.all([
-          pb.collection("fh_proxies").getList<Proxy>(page, PER_PAGE, {
+          pb.collection("fh_proxies").getList(page, PER_PAGE, {
             sort: "-created",
-            expand: "serverId",
+            expand: "serverId,tunnelId",
             filter: searchFilter,
           }),
           pb.collection("fh_proxies").getList(1, 1, {
             filter: 'bootStatus = "online"',
           }),
         ]);
-        setProxies(result.items);
+        const items: Proxy[] = result.items.map((item: any) => ({
+          ...item,
+          tunnelType: item.expand?.tunnelId?.type ?? "",
+        }));
+        setProxies(items);
         setTotalPages(result.totalPages);
         setTotalItems(result.totalItems);
         setOnlineCount(onlineResult.totalItems);

@@ -4,7 +4,6 @@ import { Card, Flex, Text, Badge, Grid, Button, Heading, Box, Table, AlertDialog
 import { Icon } from "@iconify/react";
 import { PageHeader } from "../../components/PageHeader";
 import { Loading } from "../../components/Loading";
-import pb from "../../lib/pocketbase";
 import type { Server } from "../Servers/useServers";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -14,7 +13,7 @@ import { LatencyChart } from "../../components/LatencyChart";
 import { ServerLogViewer } from "../../components/ServerLogViewer";
 import { useTranslation } from "react-i18next";
 import { useServerProxies } from "./useServerProxies";
-import { apiPost } from "../../lib/api";
+import { apiGet, apiPost } from "../../lib/api";
 
 export function ServerDetailPage() {
   const { t } = useTranslation();
@@ -47,8 +46,10 @@ export function ServerDetailPage() {
     if (!id) return;
     try {
       if (showLoading) setLoading(true);
-      const record = await pb.collection("fh_servers").getOne<Server>(id);
-      setServer(record);
+      const res = await apiGet(`/api/servers/${id}`);
+      if (!res.ok) throw new Error(t("server.failedToLoad"));
+      const data: Server = await res.json();
+      setServer(data);
     } catch (err: any) {
       if (err.isAbort) return;
       console.error("Failed to load server details:", err);
@@ -102,9 +103,9 @@ export function ServerDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "running":
+      case "active":
         return "green";
-      case "stopped":
+      case "inactive":
         return "red";
       default:
         return "gray";
@@ -149,7 +150,7 @@ export function ServerDetailPage() {
               <Icon icon="lucide:arrow-left" width="16" height="16" />
               {t("server.backToServers")}
             </Button>
-            {server.bootStatus === "running" ? (
+            {server.bootStatus === "active" ? (
               <Button size="2" color="red" variant="soft" onClick={handleStop} disabled={actionLoading}>
                 {actionLoading ? <Icon icon="lucide:loader-2" className="animate-spin" /> : <Icon icon="lucide:square" width="16" height="16" />}
                 {t("server.stop")}
@@ -238,25 +239,25 @@ export function ServerDetailPage() {
                       color={getStatusColor(server.bootStatus)}
                       variant="soft"
                       className={`animate-status-appear ${
-                        server.bootStatus === "running"
+                        server.bootStatus === "active"
                           ? "animate-status-pulse"
-                          : server.bootStatus === "stopped"
+                          : server.bootStatus === "inactive"
                             ? "animate-status-fade"
                             : ""
                       }`}
                     >
                       <span
                         className={`status-dot ${
-                          server.bootStatus === "running"
+                          server.bootStatus === "active"
                             ? "status-dot-green"
-                            : server.bootStatus === "stopped"
+                            : server.bootStatus === "inactive"
                               ? "status-dot-red"
                               : "status-dot-gray"
                         }`}
                       />
-                      {server.bootStatus === "running"
+                      {server.bootStatus === "active"
                         ? t("server.running")
-                        : server.bootStatus === "stopped"
+                        : server.bootStatus === "inactive"
                           ? t("server.stopped")
                           : t("common.status")}
                     </Badge>

@@ -63,6 +63,27 @@ type probePoint struct {
 	Val float64 `json:"val"`
 }
 
+// fetchFRPTunnelStatusMap returns a map of serverId → tunnel status (active/inactive/error/...).
+// Filters by non-empty serverId (FRP tunnels); defaults to "inactive" when status is NULL.
+func (h *ServerHandler) fetchFRPTunnelStatusMap() map[string]string {
+	type row struct {
+		ServerID string `db:"serverId"`
+		Status   string `db:"status"`
+	}
+	var rows []row
+	h.app.DB().
+		Select("serverId", "COALESCE(status, 'inactive') as status").
+		From("th_tunnels").
+		Where(dbx.NewExp("serverId IS NOT NULL AND serverId != ''")).
+		All(&rows)
+
+	m := make(map[string]string, len(rows))
+	for _, r := range rows {
+		m[r.ServerID] = r.Status
+	}
+	return m
+}
+
 func (h *ServerHandler) RegisterHandlers(e *core.ServeEvent) {
 	// Paginated server list with assembled latency metrics.
 	e.Router.GET("/api/servers", requireAuth(func(e *core.RequestEvent) error {
@@ -114,6 +135,8 @@ func (h *ServerHandler) RegisterHandlers(e *core.ServeEvent) {
 			latencyMap = map[string]*monitoring.NetworkStatus{}
 		}
 
+		tunnelStatusMap := h.fetchFRPTunnelStatusMap()
+
 		totalPages := int(math.Ceil(float64(total) / float64(perPage)))
 		items := make([]serverVO, 0, len(records))
 		for _, r := range records {
@@ -124,7 +147,7 @@ func (h *ServerHandler) RegisterHandlers(e *core.ServeEvent) {
 				ServerAddr:     r.GetString("serverAddr"),
 				ServerPort:     r.GetInt("serverPort"),
 				Description:    r.GetString("description"),
-				BootStatus:     r.GetString("bootStatus"),
+				BootStatus:     tunnelStatusMap[r.Id],
 				AutoConnection: r.GetBool("autoConnection"),
 				SendRate:       r.GetFloat("sendRate"),
 				RecvRate:       r.GetFloat("recvRate"),
@@ -146,6 +169,42 @@ func (h *ServerHandler) RegisterHandlers(e *core.ServeEvent) {
 			TotalPages: totalPages,
 			Items:      items,
 		})
+	}))
+
+	// Single server detail with bootStatus sourced from th_tunnels.
+	e.Router.GET("/api/servers/{id}", requireAuth(func(e *core.RequestEvent) error {
+		serverID := e.Request.PathValue("id")
+		r, err := h.app.FindRecordById("fh_servers", serverID)
+		if err != nil {
+			return e.JSON(404, response.Error(fmt.Errorf("server not found")))
+		}
+
+		tunnelStatusMap := h.fetchFRPTunnelStatusMap()
+
+		latencyMap, _ := h.metricsService.GetLatestLatencyBatch()
+		ns := latencyMap[serverID]
+
+		vo := serverVO{
+			ID:             r.Id,
+			ServerName:     r.GetString("serverName"),
+			User:           r.GetString("user"),
+			ServerAddr:     r.GetString("serverAddr"),
+			ServerPort:     r.GetInt("serverPort"),
+			Description:    r.GetString("description"),
+			BootStatus:     tunnelStatusMap[r.Id],
+			AutoConnection: r.GetBool("autoConnection"),
+			SendRate:       r.GetFloat("sendRate"),
+			RecvRate:       r.GetFloat("recvRate"),
+			GeoLocation:    r.Get("geoLocation"),
+			Log:            r.Get("log"),
+			Auth:           r.Get("auth"),
+			Transport:      r.Get("transport"),
+			Metadatas:      r.Get("metadatas"),
+			Created:        r.GetString("created"),
+			Updated:        r.GetString("updated"),
+			NetworkStatus:  ns,
+		}
+		return e.JSON(200, vo)
 	}))
 
 	// Probe history for a single server — last 30 minutes of latency data.
@@ -203,12 +262,14 @@ func (h *ServerHandler) RegisterHandlers(e *core.ServeEvent) {
 			latencyMap = map[string]*monitoring.NetworkStatus{}
 		}
 
+		tunnelStatusMap := h.fetchFRPTunnelStatusMap()
+
 		items := make([]serverOptionVO, 0, len(records))
 		for _, r := range records {
 			items = append(items, serverOptionVO{
 				ID:            r.Id,
 				ServerName:    r.GetString("serverName"),
-				BootStatus:    r.GetString("bootStatus"),
+				BootStatus:    tunnelStatusMap[r.Id],
 				NetworkStatus: latencyMap[r.Id],
 			})
 		}

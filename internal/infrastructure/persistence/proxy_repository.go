@@ -27,7 +27,6 @@ func (r *ProxyRepository) CountByStatus(status proxy.ProxyStatus) (int64, error)
 		r.app.Logger().Error("Failed to get proxy count by status", "error", err)
 		return 0, err
 	}
-
 	return count, nil
 }
 
@@ -43,7 +42,6 @@ func (r *ProxyRepository) CountByBootStatus(status proxy.ProxyBootStatus) (int64
 		r.app.Logger().Error("Failed to get proxy count by bootStatus", "error", err)
 		return 0, err
 	}
-
 	return count, nil
 }
 
@@ -69,7 +67,6 @@ func (r *ProxyRepository) CountByType() (map[string]int64, error) {
 	for _, result := range results {
 		counts[result.ProxyType] = result.Count
 	}
-
 	return counts, nil
 }
 
@@ -79,9 +76,7 @@ func (r *ProxyRepository) UpdateBootStatus(id string, status proxy.ProxyBootStat
 	result, err := r.app.DB().
 		Update("fh_proxies", dbx.Params{
 			"bootStatus": string(status),
-		}, dbx.HashExp{
-			"id": id,
-		}).
+		}, dbx.HashExp{"id": id}).
 		Execute()
 
 	if err != nil {
@@ -97,12 +92,32 @@ func (r *ProxyRepository) UpdateBootStatus(id string, status proxy.ProxyBootStat
 func (r *ProxyRepository) UpdateBootStatusByServerID(serverID string, status proxy.ProxyBootStatus) error {
 	r.app.Logger().Info("Update proxy boot status by server id", "id", serverID, "status", status)
 
+	// Route through th_tunnels: fh_proxies.tunnelId → th_tunnels.serverId
+	type tunnelRow struct {
+		ID string `db:"id"`
+	}
+	var tunnels []tunnelRow
+	if err := r.app.DB().
+		Select("id").
+		From("th_tunnels").
+		Where(dbx.HashExp{"serverId": serverID}).
+		All(&tunnels); err != nil {
+		r.app.Logger().Error("Failed to find tunnels for server", "serverID", serverID, "error", err)
+		return err
+	}
+	if len(tunnels) == 0 {
+		return nil
+	}
+
+	tunnelIDs := make([]any, len(tunnels))
+	for i, t := range tunnels {
+		tunnelIDs[i] = t.ID
+	}
+
 	result, err := r.app.DB().
 		Update("fh_proxies", dbx.Params{
 			"bootStatus": string(status),
-		}, dbx.HashExp{
-			"serverId": serverID,
-		}).
+		}, dbx.In("tunnelId", tunnelIDs...)).
 		Execute()
 
 	if err != nil {
@@ -112,6 +127,48 @@ func (r *ProxyRepository) UpdateBootStatusByServerID(serverID string, status pro
 
 	rowsAffected, _ := result.RowsAffected()
 	r.app.Logger().Info("Proxy boot status updated successfully", "serverID", serverID, "status", status, "count", rowsAffected)
+	return nil
+}
+
+func (r *ProxyRepository) UpdateBootStatusByIntegrationID(integrationID string, status proxy.ProxyBootStatus) error {
+	r.app.Logger().Info("Update proxy boot status by integration id", "id", integrationID, "status", status)
+
+	// fh_proxies.integrationId has been replaced by tunnelId (→ th_tunnels).
+	// Find tunnel IDs for this integration, then batch-update proxies.
+	type tunnelRow struct {
+		ID string `db:"id"`
+	}
+	var tunnels []tunnelRow
+	if err := r.app.DB().
+		Select("id").
+		From("th_tunnels").
+		Where(dbx.HashExp{"integrationId": integrationID}).
+		All(&tunnels); err != nil {
+		r.app.Logger().Error("Failed to find tunnels for integration", "integrationID", integrationID, "error", err)
+		return err
+	}
+	if len(tunnels) == 0 {
+		return nil
+	}
+
+	tunnelIDs := make([]any, len(tunnels))
+	for i, t := range tunnels {
+		tunnelIDs[i] = t.ID
+	}
+
+	result, err := r.app.DB().
+		Update("fh_proxies", dbx.Params{
+			"bootStatus": string(status),
+		}, dbx.In("tunnelId", tunnelIDs...)).
+		Execute()
+
+	if err != nil {
+		r.app.Logger().Error("Failed to update proxy boot status by integration id", "integrationID", integrationID, "error", err)
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	r.app.Logger().Info("Proxy boot status updated successfully", "integrationID", integrationID, "status", status, "count", rowsAffected)
 	return nil
 }
 
@@ -139,27 +196,28 @@ func (r *ProxyRepository) ResetAllBootStatus() error {
 func (r *ProxyRepository) FindByServerID(serverID string) ([]proxy.Proxy, error) {
 	var proxies []proxy.Proxy
 	err := r.app.DB().
-		Select("fh_proxies.*").
-		From("fh_proxies").
-		Where(dbx.HashExp{"serverId": serverID}).
+		Select("fp.*").
+		From("fh_proxies fp").
+		InnerJoin("th_tunnels tt", dbx.NewExp("tt.id = fp.tunnelId")).
+		Where(dbx.HashExp{"tt.serverId": serverID}).
 		All(&proxies)
 
 	if err != nil {
 		r.app.Logger().Error("Failed to find proxies by server id", "serverID", serverID, "error", err)
 		return nil, err
 	}
-
 	return proxies, nil
 }
 
 func (r *ProxyRepository) FindEnabledByServerID(serverID string) ([]proxy.Proxy, error) {
 	var proxies []proxy.Proxy
 	err := r.app.DB().
-		Select("fh_proxies.*").
-		From("fh_proxies").
+		Select("fp.*").
+		From("fh_proxies fp").
+		InnerJoin("th_tunnels tt", dbx.NewExp("tt.id = fp.tunnelId")).
 		Where(dbx.And(
-			dbx.HashExp{"serverId": serverID},
-			dbx.HashExp{"status": string(proxy.ProxyStatusEnabled)},
+			dbx.HashExp{"tt.serverId": serverID},
+			dbx.HashExp{"fp.status": string(proxy.ProxyStatusEnabled)},
 		)).
 		All(&proxies)
 
@@ -167,7 +225,5 @@ func (r *ProxyRepository) FindEnabledByServerID(serverID string) ([]proxy.Proxy,
 		r.app.Logger().Error("Failed to find enabled proxies by server id", "serverID", serverID, "error", err)
 		return nil, err
 	}
-
 	return proxies, nil
 }
-

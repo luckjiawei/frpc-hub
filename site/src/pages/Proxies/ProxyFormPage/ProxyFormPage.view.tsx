@@ -229,7 +229,7 @@ export function ProxyFormPageView({
                                   <Flex align="center" gap="2">
                                     <span
                                       className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
-                                        s.bootStatus === "running" ? "bg-[var(--green-9)]" : "bg-[var(--gray-7)]"
+                                        s.bootStatus === "active" ? "bg-[var(--green-9)]" : "bg-[var(--gray-7)]"
                                       }`}
                                     />
                                     <Text size="2">{s.serverName}</Text>

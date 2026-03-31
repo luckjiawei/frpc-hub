@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import frpLogo from "../../assets/frp.svg";
 import { Badge, Button, Card, Flex, Table, Text, TextField, AlertDialog } from "@radix-ui/themes";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -196,6 +197,7 @@ export function ProxiesView({
                     <Table.Row>
                       <Table.ColumnHeaderCell>{t("common.name")}</Table.ColumnHeaderCell>
                       <Table.ColumnHeaderCell>{t("common.type")}</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>{t("proxy.tunnel")}</Table.ColumnHeaderCell>
                       <Table.ColumnHeaderCell>{t("proxy.server")}</Table.ColumnHeaderCell>
                       <Table.ColumnHeaderCell>{t("proxy.localIP")}</Table.ColumnHeaderCell>
                       <Table.ColumnHeaderCell>{t("proxy.localPort")}</Table.ColumnHeaderCell>
@@ -213,13 +215,21 @@ export function ProxiesView({
                           <Text weight="medium">{proxy.name || <Text color="gray">-</Text>}</Text>
                         </Table.Cell>
                         <Table.Cell>
-                          {proxy.type === "cloudflare" ? (
+                          <Badge variant="surface">{proxy.proxyType?.toUpperCase()}</Badge>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {proxy.tunnelType === "cloudflare" ? (
                             <Badge variant="surface" color="orange">
                               <Icon icon="simple-icons:cloudflare" width="10" height="10" />
                               Cloudflare
                             </Badge>
+                          ) : proxy.tunnelType === "frp" ? (
+                            <Badge variant="surface" color="blue">
+                              <img src={frpLogo} alt="frp" width="10" height="10" style={{ display: "inline-block" }} />
+                              FRP
+                            </Badge>
                           ) : (
-                            <Badge variant="surface">{proxy.proxyType?.toUpperCase() ?? "FRP"}</Badge>
+                            <Text color="gray">-</Text>
                           )}
                         </Table.Cell>
                         <Table.Cell>
